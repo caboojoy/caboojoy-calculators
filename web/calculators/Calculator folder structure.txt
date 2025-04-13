@@ -1,0 +1,34 @@
+caboojoy-calculators/
+├── README.md
+├── web/                          # 웹용 계산기
+│   ├── index.html                # 메인 카드형 페이지
+│   ├── css/
+│   ├── js/
+│   ├── assets/                   # 공통 이미지, 아이콘 등
+│   └── calculators/              # 계산기들 모음
+│       ├── basic/                # 기본 계산기
+│       │   ├── beige-a.html
+│       │   ├── beige-b.html
+│       │   ├── dday.html
+│       │   ├── rate-change.html
+│       │   └── age.html
+│       ├── advanced/             # 고급 계산기
+│       │   ├── equation.html
+│       │   ├── interest.html
+│       │   ├── loan.html
+│       │   └── lunar-solar.html
+│       ├── salary/               # 급여 등 계산기
+│       │   ├── pay.html
+│       │   ├── retirement.html
+│       │   └── insurance.html
+│       └── health/               # 건강 계산기
+│           ├── bmi.html
+│           ├── ovulation.html
+│           └── bodytype.html
+├── app/                          # 앱 프로젝트 (Flutter, React Native 등)
+│   └── (앱 프로젝트 구조)
+└── docs/                         # 문서, 데이터 정리 등
+
+
+
+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
