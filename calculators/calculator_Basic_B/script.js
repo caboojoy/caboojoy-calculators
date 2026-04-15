@@ -276,13 +276,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
         percentage() {
             try {
-                let currentValue = this.mainDisplay.value;
+                let currentValue = this.mainDisplay.value.replace(/,/g, '');
+                if (!currentValue) return;
+
+                // 연산자로 끝나는 미완성 수식은 처리하지 않음
+                if (/[\+\-\×\÷]$/.test(currentValue)) return;
+
+                // 마지막 피연산자에만 % 적용 (일반 계산기 동작)
+                const match = currentValue.match(/^(.*?)([\+\-\×\÷])(-?\d*\.?\d+)$/);
+                if (match) {
+                    const leftExpr = match[1];
+                    const operator = match[2];
+                    const rightValue = parseFloat(match[3]);
+
+                    // 단항 음수(-20) 같은 단일 숫자는 아래 단일 숫자 처리로 넘김
+                    if (!leftExpr.trim() || isNaN(rightValue)) {
+                        // no-op: fall through
+                    } else {
+                        let percentValue;
+                        if (operator === '+' || operator === '-') {
+                            // 덧셈/뺄셈은 좌측 값을 기준으로 퍼센트 계산
+                            const safeLeftExpr = leftExpr.replace(/×/g, '*').replace(/÷/g, '/');
+                            const leftValue = new Function(`return (${safeLeftExpr})`)();
+                            if (!isFinite(leftValue)) {
+                                this.mainDisplay.value = 'Error';
+                                return;
+                            }
+                            percentValue = (leftValue * rightValue) / 100;
+                        } else {
+                            // 곱셈/나눗셈은 우측 피연산자만 퍼센트로 변환
+                            percentValue = rightValue / 100;
+                        }
+
+                        const updatedExpression = `${leftExpr}${operator}${percentValue}`;
+                        this.mainDisplay.value = updatedExpression;
+                        this.updateDisplay(updatedExpression);
+                        this.isNewInput = false;
+                        this.calculationComplete = false;
+                        return;
+                    }
+                }
+
+                // 단일 숫자일 때는 숫자 자체를 %로 변환
                 let number = parseFloat(currentValue);
                 if (!isNaN(number)) {
                     number = number / 100;
                     this.mainDisplay.value = number.toString();
                     this.updateDisplay(number.toString());
-                    this.isNewInput = true; // 새로운 입력 준비
+                    this.isNewInput = true;
                     this.calculationComplete = true;
                 }
             } catch (error) {
