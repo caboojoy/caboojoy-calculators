@@ -116,6 +116,114 @@
         }
         .hero p { font-size: .95rem; color: var(--text-secondary); }
 
+        /* ── PROMO / SUPPORT ── */
+        .top-panels {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px 16px;
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 12px;
+        }
+        .panel {
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: 16px;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+        .panel-body { padding: 16px 16px 14px; }
+        .panel-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 9px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--accent);
+            background: var(--accent-light);
+            margin-bottom: 10px;
+        }
+        .panel-title {
+            font-size: 1.02rem;
+            font-weight: 800;
+            letter-spacing: -.02em;
+            margin-bottom: 6px;
+        }
+        .panel-desc {
+            color: var(--text-secondary);
+            font-size: .82rem;
+            line-height: 1.55;
+            margin-bottom: 12px;
+        }
+        .store-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+        .store-link {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+        }
+        .store-link:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: rgba(37,99,235,.25);
+        }
+        .store-link.disabled {
+            cursor: default;
+            opacity: .78;
+        }
+        .store-label {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 7px;
+            border-radius: 999px;
+            background: var(--accent-light);
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+        .store-name {
+            font-size: .9rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+        .store-desc {
+            font-size: .76rem;
+            color: var(--text-secondary);
+            line-height: 1.45;
+        }
+        .support-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .support-note {
+            font-size: .74rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+        .support-placeholder {
+            display: inline-flex;
+            align-items: center;
+            padding: 9px 13px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1.5px dashed var(--border);
+            color: var(--text-muted);
+            background: var(--surface2);
+        }
+
         /* ── FILTER TABS ── */
         .filter-bar {
             max-width: 1200px;
@@ -420,6 +528,11 @@
             .header-inner { gap: 12px; }
             .hero { padding: 32px 16px 24px; }
             .hero h1 { font-size: 1.5rem; }
+            .top-panels {
+                grid-template-columns: 1fr;
+                padding-left: 16px;
+                padding-right: 16px;
+            }
             .filter-bar, .main { padding-left: 16px; padding-right: 16px; }
             .card-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
         }
@@ -445,6 +558,11 @@
     <h1>필요한 계산기를 바로 찾으세요</h1>
     <p>급여부터 건강까지, 자주 쓰는 계산기를 한 곳에서</p>
 </div>
+
+<section class="top-panels">
+    <div class="panel" id="store-promo-panel"></div>
+    <div class="panel" id="support-panel"></div>
+</section>
 
 <!-- FILTER -->
 <div class="filter-bar">
@@ -489,6 +607,33 @@
 
 <script>
 // ── 데이터 ──────────────────────────────────────────────
+const smartStores = [
+    {
+        name: "스마트스토어 1",
+        label: "대표 스토어",
+        desc: "대표 상품 또는 주력 브랜드 스토어 링크를 연결하세요.",
+        url: ""
+    },
+    {
+        name: "스마트스토어 2",
+        label: "추가 스토어",
+        desc: "별도 카테고리나 두 번째 스토어가 있다면 함께 노출할 수 있습니다.",
+        url: ""
+    },
+    {
+        name: "스마트스토어 3",
+        label: "선택 연결",
+        desc: "필요하면 세 번째 스토어까지 추가 홍보 카드로 운영할 수 있습니다.",
+        url: ""
+    }
+];
+
+const supportConfig = {
+    contactUrl: "",
+    reportUrl: "",
+    contactEmail: ""
+};
+
 const categories = [
     { id: "basic",    name: "기본 계산기",   color: "#2563eb" },
     { id: "advanced", name: "고급 계산기",   color: "#7c3aed" },
@@ -503,6 +648,7 @@ const calculators = [
     { id:3, title:"디데이 계산기",    desc:"중요한 날까지 남은 일수를 실시간으로 계산",          detail:"시작일과 목표일을 설정하면 남은 일·시·분·초를 실시간으로 표시합니다. 여러 이벤트를 동시에 관리할 수 있습니다.", icon:"📅", category:"basic", url:"calculators/dday.html",   ready:false },
     { id:4, title:"증감율 계산기",    desc:"두 값 사이의 증가·감소 비율을 즉시 계산",            detail:"이전 값과 현재 값을 입력하면 증가율 또는 감소율을 자동으로 계산합니다. 매출·주가·성적 비교에 유용합니다.", icon:"📈", category:"basic", url:"calculators/change.html", ready:false },
     { id:5, title:"나이 계산기",      desc:"생년월일 입력으로 만 나이·세는 나이 동시 확인",      detail:"생년월일을 입력하면 만 나이와 세는 나이를 동시에 표시합니다. 2023년 만 나이 통일법 기준을 반영합니다.", icon:"👶", category:"basic", url:"calculators/age.html",    ready:false },
+    { id:16, title:"할인 계산기",     desc:"할인 금액·할인율·원래 가격을 3가지 방식으로 계산",   detail:"정가+할인율로 최종 가격을 계산하고, 정가+할인가로 할인율을 계산하며, 할인가+할인율로 원래 가격을 역산할 수 있습니다.", icon:"🏷️", category:"basic", url:"calculators/calculator_Discount/index.html", ready:true },
     // 고급
     { id:6, title:"방정식 계산기",      desc:"1·2차 방정식의 근을 자동으로 풀어주는 계산기",          detail:"1차·2차 방정식의 계수를 입력하면 근의 공식을 통해 해를 자동으로 구해줍니다. 복소수 근도 처리합니다.", icon:"🧮", category:"advanced", url:"calculators/equation.html", ready:false },
     { id:7, title:"사채·전환사채 계산기", desc:"사채 발행가액, 이자율, 전환사채 관련 계산",            detail:"액면금액·표시이자율·유효이자율을 입력하면 발행가액과 기간별 상각표를 자동으로 생성합니다. 회계사 필수 도구.", icon:"💼", category:"advanced", url:"calculators/bond.html",     ready:false },
@@ -521,6 +667,56 @@ const calculators = [
 // ── 렌더링 ──────────────────────────────────────────────
 function getCatMeta(catId) {
     return categories.find(c => c.id === catId);
+}
+
+function renderTopPanels() {
+    const storePanel = document.getElementById('store-promo-panel');
+    const supportPanel = document.getElementById('support-panel');
+
+    storePanel.innerHTML = `
+        <div class="panel-body">
+            <div class="panel-kicker">스토어 홍보</div>
+            <div class="panel-title">운영 중인 스마트스토어를 함께 소개하세요</div>
+            <div class="panel-desc">복수 스마트스토어도 카드형 링크로 동시에 노출할 수 있습니다. 아래 설정값의 URL만 채우면 바로 활성화됩니다.</div>
+            <div class="store-grid">
+                ${smartStores.map(store => {
+                    if (!store.url) {
+                        return `
+                            <div class="store-link disabled">
+                                <div class="store-label">${store.label}</div>
+                                <div class="store-name">${store.name}</div>
+                                <div class="store-desc">${store.desc}</div>
+                            </div>`;
+                    }
+
+                    return `
+                        <a class="store-link" href="${store.url}" target="_blank" rel="noopener noreferrer">
+                            <div class="store-label">${store.label}</div>
+                            <div class="store-name">${store.name}</div>
+                            <div class="store-desc">${store.desc}</div>
+                        </a>`;
+                }).join('')}
+            </div>
+        </div>`;
+
+    const contactLink = supportConfig.contactUrl || (supportConfig.contactEmail ? `mailto:${supportConfig.contactEmail}` : "");
+    const reportLink = supportConfig.reportUrl || (supportConfig.contactEmail ? `mailto:${supportConfig.contactEmail}?subject=${encodeURIComponent('오류 제보')}` : "");
+
+    supportPanel.innerHTML = `
+        <div class="panel-body">
+            <div class="panel-kicker">문의 접수</div>
+            <div class="panel-title">문의하기 / 오류 제보를 받을 수 있게 준비</div>
+            <div class="panel-desc">구글폼, Tally, 네이버 폼 또는 이메일 링크를 연결하면 사용자가 계산기 화면 안에서 바로 문의하고 오류를 제보할 수 있습니다.</div>
+            <div class="support-actions">
+                ${contactLink
+                    ? `<a class="btn btn-primary" href="${contactLink}" ${contactLink.startsWith('mailto:') ? '' : 'target="_blank" rel="noopener noreferrer"'}>문의하기</a>`
+                    : `<span class="support-placeholder">문의 링크 설정 필요</span>`}
+                ${reportLink
+                    ? `<a class="btn btn-ghost" href="${reportLink}" ${reportLink.startsWith('mailto:') ? '' : 'target="_blank" rel="noopener noreferrer"'}>오류 제보</a>`
+                    : `<span class="support-placeholder">오류 제보 링크 설정 필요</span>`}
+            </div>
+            <div class="support-note">상단의 smartStores, supportConfig.contactUrl, supportConfig.reportUrl, supportConfig.contactEmail 값만 채우면 실제 운영용으로 바로 전환됩니다.</div>
+        </div>`;
 }
 
 function renderCard(calc, sectionClass) {
@@ -593,6 +789,7 @@ function getFiltered() {
     });
 }
 
+renderTopPanels();
 function refresh() { renderAll(getFiltered(), currentFilter); }
 refresh();
 

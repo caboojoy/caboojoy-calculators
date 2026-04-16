@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>할인 계산기</title>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(170deg, #d6eeff 0%, #e8f4ff 40%, #f0f8ff 100%);
+      color: #2a4a6b;
+      font-family: 'Noto Sans KR', sans-serif;
+      padding-bottom: 48px;
+    }
+
+    /* ── 헤더 ── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 22px 20px 18px;
+      background: linear-gradient(180deg, #b8dcf8 0%, #d6eeff 100%);
+      border-bottom: 1px solid #c4e0f7;
+    }
+    .header-badge {
+      background: #3a8fd8;
+      color: #fff;
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: 11px;
+      letter-spacing: 2px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+    .header-title {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      color: #1a3a5c;
+    }
+    .header-sub {
+      font-size: 11px;
+      color: #6a9fc0;
+      margin-top: 2px;
+      letter-spacing: 0.3px;
+    }
+    .header-cart { margin-left: auto; font-size: 28px; }
+
+    /* ── 모드 탭 ── */
+    .mode-rail {
+      display: flex;
+      gap: 8px;
+      padding: 18px 16px 0;
+    }
+    .mode-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      padding: 12px 6px;
+      background: #fff;
+      border: 1.5px solid #c4e0f7;
+      border-radius: 14px;
+      color: #7ab4d8;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      font-family: inherit;
+    }
+    .mode-btn:hover {
+      border-color: #7ab4d8;
+      color: #3a8fd8;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(58,143,216,0.12);
+    }
+    .mode-btn.active {
+      background: #3a8fd8;
+      border-color: #3a8fd8;
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(58,143,216,0.3);
+    }
+    .mode-icon { font-size: 22px; font-weight: 900; font-family: 'Black Han Sans', sans-serif; }
+    .mode-ko   { font-size: 15px; font-weight: 800; letter-spacing: -0.3px; }
+
+    .mode-desc {
+      padding: 10px 16px 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: #3a8fd8;
+      letter-spacing: -0.2px;
+    }
+
+    @media (max-width: 390px) {
+      .mode-icon { font-size: 20px; }
+      .mode-ko   { font-size: 14px; }
+      .mode-desc { font-size: 13px; }
+    }
+
+    /* ── 입력 카드 ── */
+    .card {
+      margin: 14px 16px 0;
+      background: #fff;
+      border: 1.5px solid #c4e0f7;
+      border-radius: 18px;
+      padding: 6px 0;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(58,143,216,0.08);
+    }
+    .field { padding: 14px 18px; }
+    .field-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: #7ab4d8;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .field-row {
+      display: flex;
+      align-items: center;
+      border: 1.5px solid #d6eeff;
+      border-radius: 10px;
+      background: #f0f8ff;
+      transition: border-color 0.15s;
+    }
+    .field-row:focus-within {
+      border-color: #3a8fd8;
+      box-shadow: 0 0 0 3px rgba(58,143,216,0.12);
+      background: #fff;
+    }
+    .field-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 12px 14px;
+      font-size: 24px;
+      font-weight: 800;
+      color: #1a3a5c;
+      font-family: 'Noto Sans KR', sans-serif;
+      letter-spacing: -0.5px;
+    }
+    .field-input::placeholder { color: #b8d8f0; }
+    .field-unit {
+      padding: 0 14px 0 4px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #7ab4d8;
+    }
+    .field-divider {
+      height: 1px;
+      background: #e8f4ff;
+      margin: 0 18px;
+    }
+
+    /* ── 결과 ── */
+    .result-wrap { padding: 0 16px; }
+    .result-in {
+      animation: slideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(14px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .result-hero {
+      margin-top: 14px;
+      background: #fff;
+      border: 1.5px solid #c4e0f7;
+      border-radius: 18px;
+      padding: 22px 20px 18px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(58,143,216,0.1);
+    }
+    .result-hero-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #7ab4d8;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .result-hero-val {
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: 52px;
+      color: #1a3a5c;
+      letter-spacing: -2px;
+      line-height: 1;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 4px;
+    }
+    .unit-sm {
+      font-size: 20px;
+      letter-spacing: 0;
+      margin-bottom: 4px;
+      color: #7ab4d8;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+    .result-badge {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 4px 14px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.3px;
+    }
+
+    /* ── 상세 그리드 ── */
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .detail-cell {
+      background: #fff;
+      border: 1.5px solid #c4e0f7;
+      border-radius: 12px;
+      padding: 14px 16px;
+      box-shadow: 0 2px 8px rgba(58,143,216,0.06);
+    }
+    .detail-label {
+      font-size: 11px;
+      color: #7ab4d8;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+    .detail-val {
+      font-size: 18px;
+      color: #1a3a5c;
+      font-weight: 600;
+    }
+
+    /* ── 절약 배너 ── */
+    .save-banner {
+      margin-top: 8px;
+      background: #f0f8ff;
+      border: 1.5px solid #c4e0f7;
+      border-radius: 12px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .save-icon { font-size: 20px; }
+    .save-text { font-size: 17px; font-weight: 800; color: #1a3a5c; flex: 1; }
+    .save-pct  { font-size: 13px; font-weight: 600; color: #7ab4d8; }
+
+    /* ── 빈 상태 ── */
+    .empty {
+      text-align: center;
+      padding: 52px 20px;
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; filter: opacity(0.35); }
+    .empty-msg  { font-size: 14px; line-height: 1.8; color: #7ab4d8; }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- ── 헤더 ── -->
+  <header class="header">
+    <div class="header-badge">MART</div>
+    <div class="header-text">
+      <div class="header-title">할인 계산기</div>
+      <div class="header-sub">스마트하게 장보세요</div>
+    </div>
+    <div class="header-cart">🛒</div>
+  </header>
+
+  <!-- ── 모드 탭 ── -->
+  <div class="mode-rail">
+    <button class="mode-btn active" data-mode="final">
+      <span class="mode-icon">₩</span>
+      <span class="mode-ko">할인가</span>
+    </button>
+    <button class="mode-btn" data-mode="rate">
+      <span class="mode-icon">%</span>
+      <span class="mode-ko">할인율</span>
+    </button>
+    <button class="mode-btn" data-mode="original">
+      <span class="mode-icon">?</span>
+      <span class="mode-ko">정가역산</span>
+    </button>
+  </div>
+  <div class="mode-desc" id="mode-desc">정가 × 할인율 → 살 수 있는 가격</div>
+
+  <!-- ── 입력 카드 ── -->
+  <div class="card" id="input-card"></div>
+
+  <!-- ── 결과 영역 ── -->
+  <div id="result-area"></div>
+
+  <script>
+    /* ══ 데이터 ══════════════════════════════════ */
+    const MODES = {
+      final:    { desc: "정가 × 할인율 → 살 수 있는 가격",  fields: ["original","rate"],    resultLabel: "최종 가격" },
+      rate:     { desc: "정가 vs 할인가 → 몇 % 할인?",      fields: ["original","final"],   resultLabel: "할인율"   },
+      original: { desc: "할인가 + 할인율 → 원래 가격",       fields: ["final","rate"],       resultLabel: "원래 정가"},
+    };
+
+    const FIELD_META = {
+      original: { label: "정가 (할인 전)",    unit: "원", ph: "예: 12,000" },
+      final:    { label: "할인가 (최종 가격)", unit: "원", ph: "예: 8,400"  },
+      rate:     { label: "할인율",             unit: "%",  ph: "예: 30"     },
+    };
+
+    /* ══ 상태 ════════════════════════════════════ */
+    let currentMode = "final";
+    let vals = {};
+
+    /* ══ 유틸 ════════════════════════════════════ */
+    const fmt    = n => (n == null || isNaN(n)) ? "—" : Math.round(n).toLocaleString("ko-KR");
+    const fmtDec = (n, d=1) => (n == null || isNaN(n)) ? "—" : Number(n.toFixed(d)).toLocaleString("ko-KR");
+    const parse  = s => { const n = parseFloat(String(s).replace(/,/g,"")); return isNaN(n) ? null : n; };
+
+    function addComma(s) {
+      const clean = s.replace(/[^0-9.]/g, "");
+      if (!clean) return "";
+      const [int, dec] = clean.split(".");
+      const intF = parseInt(int || "0", 10).toLocaleString("ko-KR");
+      return dec !== undefined ? `${intF}.${dec}` : intF;
+    }
+
+    function rateColor(r) {
+      if (r == null) return "#7ab4d8";
+      if (r >= 50)   return "#3a8fd8";
+      if (r >= 30)   return "#5ba8e8";
+      if (r >= 20)   return "#7ec8e3";
+      if (r >= 10)   return "#93d5f0";
+      return "#7ab4d8";
+    }
+
+    /* ══ 계산 ════════════════════════════════════ */
+    function calculate() {
+      const o = parse(vals.original);
+      const f = parse(vals.final);
+      const r = parse(vals.rate);
+
+      if (currentMode === "final") {
+        if (o == null || r == null || r < 0 || r > 100) return null;
+        const discount = o * (r / 100);
+        return { original: o, final: o - discount, rate: r, discount };
+      }
+      if (currentMode === "rate") {
+        if (o == null || f == null || o <= 0 || f > o) return null;
+        const discount = o - f;
+        return { original: o, final: f, rate: (discount / o) * 100, discount };
+      }
+      if (currentMode === "original") {
+        if (f == null || r == null || r <= 0 || r >= 100) return null;
+        const original = f / (1 - r / 100);
+        const discount = original - f;
+        return { original, final: f, rate: r, discount };
+      }
+      return null;
+    }
+
+    /* ══ 렌더 ════════════════════════════════════ */
+    function renderInputs() {
+      const card = document.getElementById("input-card");
+      const fields = MODES[currentMode].fields;
+      card.innerHTML = fields.map((field, i) => {
+        const m = FIELD_META[field];
+        const divider = i < fields.length - 1 ? '<div class="field-divider"></div>' : "";
+        return `
+          <div class="field">
+            <label class="field-label">${m.label}</label>
+            <div class="field-row">
+              <input
+                class="field-input"
+                type="text"
+                inputmode="decimal"
+                placeholder="${m.ph}"
+                data-field="${field}"
+                value="${vals[field] || ""}"
+              />
+              <span class="field-unit">${m.unit}</span>
+            </div>
+          </div>
+          ${divider}
+        `;
+      }).join("");
+
+      // 입력 이벤트 연결
+      card.querySelectorAll(".field-input").forEach(input => {
+        input.addEventListener("input", e => {
+          const field = e.target.dataset.field;
+          const cursor = e.target.selectionStart;
+          const raw = e.target.value;
+          const formatted = addComma(raw);
+          vals[field] = formatted;
+          e.target.value = formatted;
+          renderResult();
+        });
+      });
+
+      // 첫 번째 입력창 포커스
+      const first = card.querySelector(".field-input");
+      if (first) first.focus();
+    }
+
+    function renderResult() {
+      const area = document.getElementById("result-area");
+      const res = calculate();
+
+      if (!res) {
+        area.innerHTML = `
+          <div class="empty">
+            <div class="empty-icon">🏪</div>
+            <div class="empty-msg">위에 숫자를 입력하면<br>바로 계산됩니다</div>
+          </div>`;
+        return;
+      }
+
+      const accent = rateColor(res.rate);
+      const modeObj = MODES[currentMode];
+
+      let heroVal = "";
+      if (currentMode === "final")    heroVal = `${fmt(res.final)}<span class="unit-sm">원</span>`;
+      if (currentMode === "rate")     heroVal = `${fmtDec(res.rate)}<span class="unit-sm">%</span>`;
+      if (currentMode === "original") heroVal = `${fmt(res.original)}<span class="unit-sm">원</span>`;
+
+      area.innerHTML = `
+        <div class="result-wrap result-in">
+          <div class="result-hero" style="border-top: 3px solid ${accent}">
+            <div class="result-hero-label">${modeObj.resultLabel}</div>
+            <div class="result-hero-val">${heroVal}</div>
+            <div class="result-badge" style="background:${accent}">${fmtDec(res.rate)}% 할인</div>
+          </div>
+
+          <div class="detail-grid">
+            <div class="detail-cell">
+              <div class="detail-label">정가</div>
+              <div class="detail-val">${fmt(res.original)}원</div>
+            </div>
+            <div class="detail-cell">
+              <div class="detail-label">할인율</div>
+              <div class="detail-val" style="color:${accent}">-${fmtDec(res.rate)}%</div>
+            </div>
+            <div class="detail-cell">
+              <div class="detail-label">할인 금액</div>
+              <div class="detail-val" style="color:${accent}">-${fmt(res.discount)}원</div>
+            </div>
+            <div class="detail-cell">
+              <div class="detail-label">최종 가격</div>
+              <div class="detail-val" style="font-weight:800">${fmt(res.final)}원</div>
+            </div>
+          </div>
+
+          <div class="save-banner" style="border-left: 4px solid ${accent}">
+            <span class="save-icon">💸</span>
+            <span class="save-text">${fmt(res.discount)}원 절약!</span>
+            <span class="save-pct">(${fmtDec(res.rate)}% OFF)</span>
+          </div>
+        </div>`;
+    }
+
+    function switchMode(newMode) {
+      currentMode = newMode;
+      vals = {};
+
+      // 탭 활성화
+      document.querySelectorAll(".mode-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.mode === newMode);
+      });
+
+      // 설명 텍스트
+      document.getElementById("mode-desc").textContent = MODES[newMode].desc;
+
+      renderInputs();
+      renderResult();
+    }
+
+    /* ══ 이벤트 ══════════════════════════════════ */
+    document.querySelectorAll(".mode-btn").forEach(btn => {
+      btn.addEventListener("click", () => switchMode(btn.dataset.mode));
+    });
+
+    /* ══ 초기 렌더 ═══════════════════════════════ */
+    renderInputs();
+    renderResult();
+  </script>
+</body>
+</html>
