@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>나이 계산기</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:     #F7F3ED;
+      --card:   #FFFFFF;
+      --ink:    #1F1813;
+      --brown:  #6B3318;
+      --gold:   #B8790A;
+      --muted:  #7C6550;
+      --soft:   #F2EDE5;
+      --border: #DDD0BE;
+    }
+
+    body {
+      min-height: 100vh;
+      background: radial-gradient(ellipse 80% 80% at 30% 40%, #EFE6D8 0%, var(--bg) 65%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      font-family: 'Noto Sans KR', sans-serif;
+      color: var(--ink);
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--card);
+      border-radius: 24px;
+      padding: 2.5rem 2.25rem;
+      width: 100%;
+      max-width: 450px;
+      box-shadow: 0 24px 72px rgba(50,20,5,.11), 0 4px 16px rgba(50,20,5,.06);
+      position: relative;
+      overflow: hidden;
+    }
+    .accent-bar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #6B3318 0%, #B8790A 50%, #6B3318 100%);
+    }
+
+    /* ── Header ── */
+    .header { text-align: center; margin-bottom: 2rem; }
+    .header .emoji { font-size: 2.1rem; line-height: 1; margin-bottom: .45rem; }
+    .header h1 {
+      font-family: 'Nanum Myeongjo', serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      margin-bottom: .2rem;
+    }
+    .header p {
+      color: var(--muted);
+      font-size: .72rem;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+
+    /* ── Label ── */
+    .lbl {
+      font-size: .72rem;
+      color: var(--muted);
+      letter-spacing: .13em;
+      font-weight: 500;
+      margin-bottom: .55rem;
+    }
+
+    /* ── Toggle ── */
+    .toggle-wrap {
+      display: flex;
+      background: var(--soft);
+      border-radius: 10px;
+      padding: 4px;
+      border: 1px solid var(--border);
+      gap: 4px;
+      margin-bottom: 1.4rem;
+    }
+    .pill {
+      flex: 1;
+      padding: .55rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: .88rem;
+      font-family: inherit;
+      font-weight: 500;
+      letter-spacing: .04em;
+      transition: all .2s;
+      background: transparent;
+      color: var(--brown);
+    }
+    .pill:hover { background: rgba(107,51,24,.07); }
+    .pill.on {
+      background: var(--brown);
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(107,51,24,.3);
+    }
+
+    /* ── Date Grid ── */
+    .date-grid {
+      display: grid;
+      grid-template-columns: 1.45fr 1.3fr 1.3fr;
+      gap: .6rem;
+      margin-bottom: 1.5rem;
+    }
+    .date-grid.lunar-mode { margin-bottom: 1rem; }
+    .select-wrap { position: relative; }
+    .select-wrap svg {
+      position: absolute;
+      right: .65rem;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      color: #8B6F4E;
+    }
+    select {
+      width: 100%;
+      padding: .65rem 2rem .65rem .85rem;
+      background: var(--soft);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: .88rem;
+      color: var(--ink);
+      cursor: pointer;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      font-family: inherit;
+      transition: border-color .2s;
+    }
+    select:focus {
+      border-color: var(--brown);
+      box-shadow: 0 0 0 3px rgba(107,51,24,.14);
+    }
+
+    /* ── Leap row ── */
+    .leap-row {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      cursor: pointer;
+      font-size: .85rem;
+      color: #5C4030;
+      padding: .45rem 0;
+      user-select: none;
+      margin-bottom: 1.4rem;
+    }
+    .leap-row input[type="checkbox"] {
+      width: 17px;
+      height: 17px;
+      accent-color: var(--brown);
+      cursor: pointer;
+    }
+    .leap-note { color: var(--muted); font-size: .75rem; }
+
+    /* ── Error ── */
+    .error-box {
+      display: none;
+      align-items: flex-start;
+      gap: .4rem;
+      background: #FFF6F5;
+      border: 1px solid #F7C5BC;
+      border-radius: 10px;
+      padding: .7rem 1rem;
+      margin-bottom: 1.2rem;
+      color: #B32B1F;
+      font-size: .84rem;
+    }
+    .error-box.show { display: flex; }
+
+    /* ── Button ── */
+    .calc-btn {
+      width: 100%;
+      padding: .9rem;
+      background: linear-gradient(135deg, #6B3318 0%, #8C4A28 100%);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: .15em;
+      font-family: inherit;
+      box-shadow: 0 4px 18px rgba(107,51,24,.28);
+      transition: all .2s;
+    }
+    .calc-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(107,51,24,.35);
+    }
+    .calc-btn:active { transform: translateY(0); }
+
+    /* ── Result ── */
+    #result {
+      margin-top: 1.5rem;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity .42s ease, transform .42s cubic-bezier(.34,1.28,.64,1);
+    }
+    #result.in { opacity: 1; transform: translateY(0); }
+
+    /* conversion notice */
+    .conv-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: nowrap;
+      gap: .3rem;
+      font-size: .75rem;
+      color: var(--muted);
+      white-space: nowrap;
+      margin-bottom: 1.1rem;
+      padding: .6rem .8rem;
+      background: var(--soft);
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .conv-box strong { color: var(--brown); }
+
+    /* age cards */
+    .age-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: linear-gradient(145deg, #FAF6F0, #F2E8D8);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .age-cell {
+      text-align: center;
+      padding: 1.4rem .75rem;
+    }
+    .age-cell + .age-cell { border-left: 1px solid var(--border); }
+    .age-cell-lbl {
+      font-size: .7rem;
+      color: var(--muted);
+      letter-spacing: .16em;
+      font-weight: 500;
+      margin-bottom: .45rem;
+    }
+    .age-num {
+      font-family: 'Nanum Myeongjo', serif;
+      font-size: 3.8rem;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -.02em;
+    }
+    .age-sub { font-size: .7rem; color: var(--muted); margin-top: .3rem; }
+
+    /* birthday bar */
+    .bd-bar {
+      margin-top: .9rem;
+      text-align: center;
+      font-size: .8rem;
+      padding: .7rem 1rem;
+      border-radius: 10px;
+      background: var(--soft);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .bd-bar.today {
+      background: #FFF8DC;
+      border-color: #E8C84A;
+      color: #7A5600;
+    }
+
+    /* footnote */
+    .footnote {
+      text-align: center;
+      font-size: .73rem;
+      color: var(--muted);
+      margin-top: .65rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="accent-bar"></div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="emoji">🗓</div>
+    <h1>나이 계산기</h1>
+    <p>Age Calculator</p>
+  </div>
+
+  <!-- Calendar Type Toggle -->
+  <div class="lbl">달력 종류</div>
+  <div class="toggle-wrap">
+    <button class="pill on" id="btn-solar" onclick="switchCal('solar')">☀️ 양력</button>
+    <button class="pill"    id="btn-lunar" onclick="switchCal('lunar')">🌙 음력</button>
+  </div>
+
+  <!-- Date Pickers -->
+  <div class="lbl">생년월일</div>
+  <div class="date-grid" id="date-grid">
+    <!-- Year -->
+    <div class="select-wrap">
+      <select id="sel-year" onchange="onYearMonthChange()">
+        <option value="">연도</option>
+      </select>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <!-- Month -->
+    <div class="select-wrap">
+      <select id="sel-month" onchange="onYearMonthChange()">
+        <option value="">월</option>
+      </select>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <!-- Day -->
+    <div class="select-wrap">
+      <select id="sel-day">
+        <option value="">일</option>
+      </select>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+  </div>
+
+  <!-- Leap Month (음력 전용) -->
+  <label class="leap-row" id="leap-row" style="display:none">
+    <input type="checkbox" id="chk-leap">
+    <span style="font-weight:500">윤달 (閏月)</span>
+    <span class="leap-note">— 같은 달이 두 번 오는 달</span>
+  </label>
+
+  <!-- Error -->
+  <div class="error-box" id="error-box">
+    <span>⚠️</span><span id="error-msg"></span>
+  </div>
+
+  <!-- Button -->
+  <button class="calc-btn" onclick="calculate()">계산하기</button>
+
+  <!-- Result -->
+  <div id="result">
+    <div class="conv-box" id="conv-box" style="display:none"></div>
+    <div class="age-grid">
+      <div class="age-cell">
+        <div class="age-cell-lbl">만 나이</div>
+        <div class="age-num" id="intl-age" style="color:#1F1813">–</div>
+        <div class="age-sub">세 (국제 표준)</div>
+      </div>
+      <div class="age-cell">
+        <div class="age-cell-lbl">세는 나이</div>
+        <div class="age-num" id="kor-age" style="color:#6B3318">–</div>
+        <div class="age-sub">세 (한국 기준)</div>
+      </div>
+    </div>
+    <div class="bd-bar" id="bd-bar"></div>
+    <p class="footnote" id="footnote"></p>
+  </div>
+</div>
+
+<script>
+  /* ── 날짜 초기화 ── */
+  const today = new Date();
+  const CURR_Y = today.getFullYear();
+  const CURR_M = today.getMonth() + 1;
+  const CURR_D = today.getDate();
+
+  let calType = 'solar';
+
+  /* ── 연도 옵션 생성 ── */
+  (function buildYears() {
+    const sel = document.getElementById('sel-year');
+    for (let y = CURR_Y; y >= 1900; y--) {
+      const o = document.createElement('option');
+      o.value = y; o.textContent = y + '년';
+      sel.appendChild(o);
+    }
+  })();
+
+  /* ── 월 옵션 생성 ── */
+  (function buildMonths() {
+    const sel = document.getElementById('sel-month');
+    for (let m = 1; m <= 12; m++) {
+      const o = document.createElement('option');
+      o.value = m; o.textContent = m + '월';
+      sel.appendChild(o);
+    }
+  })();
+
+  /* ── 일 옵션 갱신 ── */
+  function buildDays(max) {
+    const sel = document.getElementById('sel-day');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">일</option>';
+    for (let d = 1; d <= max; d++) {
+      const o = document.createElement('option');
+      o.value = d; o.textContent = d + '일';
+      sel.appendChild(o);
+    }
+    if (cur && +cur <= max) sel.value = cur;
+  }
+
+  function onYearMonthChange() {
+    const y = +document.getElementById('sel-year').value;
+    const m = +document.getElementById('sel-month').value;
+    let max = 31;
+    if (y && m) {
+      max = calType === 'lunar' ? 30 : new Date(y, m, 0).getDate();
+    }
+    buildDays(max);
+    hideResult();
+  }
+
+  /* ── 달력 전환 ── */
+  function switchCal(t) {
+    calType = t;
+    document.getElementById('btn-solar').className = 'pill' + (t === 'solar' ? ' on' : '');
+    document.getElementById('btn-lunar').className = 'pill' + (t === 'lunar' ? ' on' : '');
+    document.getElementById('leap-row').style.display = t === 'lunar' ? 'flex' : 'none';
+    document.getElementById('chk-leap').checked = false;
+    document.getElementById('sel-day').value = '';
+    document.getElementById('date-grid').className = 'date-grid' + (t === 'lunar' ? ' lunar-mode' : '');
+    onYearMonthChange();
+    clearError();
+    hideResult();
+  }
+
+  /* ── 에러 ── */
+  function showError(msg) {
+    const box = document.getElementById('error-box');
+    document.getElementById('error-msg').textContent = msg;
+    box.classList.add('show');
+  }
+  function clearError() {
+    document.getElementById('error-box').classList.remove('show');
+  }
+
+  /* ── 결과 숨김 ── */
+  function hideResult() {
+    const r = document.getElementById('result');
+    r.classList.remove('in');
+  }
+
+  /* ── 계산 ── */
+  function calculate() {
+    clearError();
+    hideResult();
+
+    const y = +document.getElementById('sel-year').value;
+    const m = +document.getElementById('sel-month').value;
+    const d = +document.getElementById('sel-day').value;
+    const isLeap = document.getElementById('chk-leap').checked;
+
+    if (!y || !m || !d)            return showError('날짜를 모두 선택해주세요.');
+    if (y < 1900 || y > CURR_Y)   return showError(`연도는 1900 ~ ${CURR_Y} 사이여야 합니다.`);
+    if (m < 1 || m > 12)          return showError('올바른 월을 선택해주세요.');
+    if (d < 1)                     return showError('올바른 일을 선택해주세요.');
+
+    let sY, sM, sD;
+
+    if (calType === 'solar') {
+      const max = new Date(y, m, 0).getDate();
+      if (d > max) return showError(`${m}월은 최대 ${max}일까지 있습니다.`);
+      [sY, sM, sD] = [y, m, d];
+    } else {
+      if (typeof Lunar === 'undefined')
+        return showError('달력 라이브러리 로딩 중입니다. 잠시 후 다시 시도해주세요.');
+      try {
+        const lunar = Lunar.fromYmd(y, isLeap ? -m : m, d);
+        const solar = lunar.getSolar();
+        sY = solar.getYear(); sM = solar.getMonth(); sD = solar.getDay();
+      } catch {
+        return showError('유효하지 않은 음력 날짜입니다. 날짜와 윤달 여부를 확인해주세요.');
+      }
+    }
+
+    const todayDate = new Date(CURR_Y, CURR_M - 1, CURR_D);
+    const birthDate = new Date(sY, sM - 1, sD);
+    if (birthDate > todayDate) return showError('미래의 날짜는 입력할 수 없습니다.');
+
+    const bdThisYear = new Date(CURR_Y, sM - 1, sD);
+    const passed     = bdThisYear <= todayDate;
+    const isBirthday = bdThisYear.getTime() === todayDate.getTime();
+    const intlAge    = passed ? CURR_Y - sY : CURR_Y - sY - 1;
+    const korAge     = CURR_Y - sY + 1;
+
+    let nextBd = new Date(CURR_Y, sM - 1, sD);
+    if (nextBd <= todayDate) nextBd = new Date(CURR_Y + 1, sM - 1, sD);
+    const daysLeft = Math.ceil((nextBd - todayDate) / 86400000);
+
+    /* 결과 표시 */
+    document.getElementById('intl-age').textContent = intlAge;
+    document.getElementById('kor-age').textContent  = korAge;
+
+    /* 변환 박스 */
+    const convBox = document.getElementById('conv-box');
+    if (calType === 'lunar') {
+      const mm = String(m).padStart(2,'0');
+      const dd = String(d).padStart(2,'0');
+      convBox.style.display = 'flex';
+      convBox.innerHTML =
+        `<span>음력 ${y}.${mm}.${dd}${isLeap?' (윤)':''}</span>` +
+        `<span style="color:#DDD0BE">→</span>` +
+        `<strong>양력 ${sY}년 ${sM}월 ${sD}일</strong>`;
+    } else {
+      convBox.style.display = 'none';
+    }
+
+    /* 생일 알림 */
+    const bdBar = document.getElementById('bd-bar');
+    if (isBirthday) {
+      bdBar.className = 'bd-bar today';
+      bdBar.textContent = '🎂 오늘이 생일입니다! 축하드립니다! 🎉';
+    } else if (passed) {
+      bdBar.className = 'bd-bar';
+      bdBar.textContent = `올해 생일이 지났습니다 · 다음 생일까지 ${daysLeft}일 남았습니다 🎂`;
+    } else {
+      bdBar.className = 'bd-bar';
+      bdBar.textContent = `생일까지 🎂 ${daysLeft}일 남았습니다`;
+    }
+
+    /* 각주 (양력) */
+    const fn = document.getElementById('footnote');
+    fn.textContent = calType === 'solar'
+      ? `생년월일 ${sY}년 ${sM}월 ${sD}일 (양력)` : '';
+
+    /* 애니메이션 */
+    const r = document.getElementById('result');
+    requestAnimationFrame(() => requestAnimationFrame(() => r.classList.add('in')));
+  }
+
+  /* ── 초기 일 옵션 ── */
+  buildDays(31);
+</script>
+</body>
+</html>

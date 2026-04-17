@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>증감율 계산기</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(160deg, #d6eeff 0%, #e8f4fd 40%, #dde8f8 70%, #cfe0f5 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Noto Sans KR', sans-serif;
+      padding: 20px;
+    }
+
+    .calc-card {
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(160, 210, 245, 0.55);
+      border-radius: 20px;
+      box-shadow: 0 8px 40px rgba(100, 170, 230, 0.18), 0 2px 8px rgba(120, 180, 240, 0.12);
+      width: 100%;
+      max-width: 440px;
+      padding: 40px 36px 36px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .calc-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #89c8f5, #a8d8f0, #b5c8f8);
+      border-radius: 20px 20px 0 0;
+    }
+
+    .calc-card::after {
+      content: '';
+      position: absolute;
+      top: -80px; right: -60px;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, rgba(170,220,255,0.25) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .header { margin-bottom: 36px; }
+
+    .header-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      letter-spacing: 4px;
+      color: #7ab8e0;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .header-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a3358;
+      letter-spacing: -0.5px;
+    }
+
+    .field-group { margin-bottom: 22px; }
+
+    .field-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #1a3358;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .field-input {
+      width: 100%;
+      background: rgba(220, 240, 255, 0.45);
+      border: 1.5px solid #b8d8ef;
+      border-radius: 10px;
+      color: #1a3358;
+      font-family: 'Space Mono', monospace;
+      font-size: 24px;
+      padding: 14px 16px;
+      outline: none;
+      transition: border-color 0.15s, background 0.15s;
+      -moz-appearance: textfield;
+    }
+
+    .field-input::-webkit-inner-spin-button,
+    .field-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+    .field-input:focus {
+      border-color: #7ab8e0;
+      background: rgba(200, 232, 255, 0.6);
+    }
+
+    .field-input::placeholder { color: #b8d4e8; }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 28px 0 24px;
+    }
+
+    .divider-line { flex: 1; height: 1px; background: #c8e0f0; }
+    .divider-icon { font-size: 18px; color: #a8cce0; }
+
+    .result-box {
+      background: rgba(210, 235, 255, 0.4);
+      border: 1.5px solid #c0ddf0;
+      border-radius: 14px;
+      padding: 24px 20px;
+      min-height: 110px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .result-box.has-result { border-color: #80bce0; background: rgba(190, 228, 255, 0.45); }
+    .result-box.error      { border-color: #f0a8b8; background: rgba(255, 220, 230, 0.35); }
+
+    .result-label {
+      font-size: 13px;
+      letter-spacing: 3px;
+      color: #1a3358;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-family: 'Space Mono', monospace;
+      margin-bottom: 12px;
+    }
+
+    .result-value {
+      font-family: 'Space Mono', monospace;
+      font-size: 52px;
+      font-weight: 700;
+      line-height: 1;
+      transition: all 0.25s ease;
+      color: #c8dce8;
+    }
+
+    .result-value.positive { color: #0d6e8a; }
+    .result-value.negative { color: #a03060; }
+    .result-value.zero     { color: #1a3358; }
+    .result-value.error    { color: #a03060; font-size: 20px; font-weight: 600; }
+    .result-value.empty    { color: #c8dce8; font-size: 32px; }
+
+    .result-formula {
+      margin-top: 14px;
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      color: #4a6a88;
+      letter-spacing: 0.5px;
+    }
+
+    .badge {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 4px 12px;
+      font-size: 12px;
+      letter-spacing: 2px;
+      font-family: 'Space Mono', monospace;
+      text-transform: uppercase;
+      border-radius: 20px;
+    }
+
+    .badge.positive { background: rgba(13,110,138,0.12); color: #0d6e8a; }
+    .badge.negative { background: rgba(160,48,96,0.12);  color: #a03060; }
+    .badge.zero     { background: rgba(26,51,88,0.10);   color: #1a3358; }
+  </style>
+</head>
+<body>
+  <div class="calc-card">
+    <div class="header">
+      <div class="header-label">Calculator</div>
+      <div class="header-title">증감율 계산기</div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label" for="initial">초기값 (A)</label>
+      <input class="field-input" id="initial" type="number" placeholder="0" oninput="calculate()" />
+    </div>
+
+    <div class="field-group">
+      <label class="field-label" for="final">최종값 (B)</label>
+      <input class="field-input" id="final" type="number" placeholder="0" oninput="calculate()" />
+    </div>
+
+    <div class="divider">
+      <div class="divider-line"></div>
+      <div class="divider-icon">⟶</div>
+      <div class="divider-line"></div>
+    </div>
+
+    <div class="result-box" id="result-box">
+      <div class="result-label">증감율 결과</div>
+      <div class="result-value empty" id="result-value">— —</div>
+      <span class="badge" id="result-badge" style="display:none;"></span>
+      <div class="result-formula" id="result-formula" style="display:none;"></div>
+    </div>
+  </div>
+
+  <script>
+    function calculate() {
+      const ivRaw = document.getElementById('initial').value;
+      const fvRaw = document.getElementById('final').value;
+
+      const box    = document.getElementById('result-box');
+      const val    = document.getElementById('result-value');
+      const badge  = document.getElementById('result-badge');
+      const formula = document.getElementById('result-formula');
+
+      // 초기화
+      box.className = 'result-box';
+      badge.style.display = 'none';
+      formula.style.display = 'none';
+
+      // 빈 값
+      if (ivRaw === '' || fvRaw === '') {
+        val.className = 'result-value empty';
+        val.textContent = '— —';
+        return;
+      }
+
+      const iv = parseFloat(ivRaw);
+      const fv = parseFloat(fvRaw);
+
+      // 숫자 아닌 경우
+      if (isNaN(iv) || isNaN(fv)) {
+        box.classList.add('error');
+        val.className = 'result-value error';
+        val.textContent = '숫자를 입력해주세요';
+        return;
+      }
+
+      // 초기값 0
+      if (iv === 0) {
+        box.classList.add('error');
+        val.className = 'result-value error';
+        val.textContent = '초기값이 0이면 계산 불가';
+        return;
+      }
+
+      // 계산
+      const rate = ((fv - iv) / iv) * 100;
+      const formatted = rate.toFixed(2);
+
+      let type, sign, badgeText;
+      if (rate > 0)      { type = 'positive'; sign = '▲'; badgeText = '증가'; }
+      else if (rate < 0) { type = 'negative'; sign = '▼'; badgeText = '감소'; }
+      else               { type = 'zero';     sign = '';  badgeText = '변동 없음'; }
+
+      box.classList.add('has-result');
+      val.className = `result-value ${type}`;
+      val.textContent = `${sign} ${formatted}%`;
+
+      badge.className = `badge ${type}`;
+      badge.textContent = badgeText;
+      badge.style.display = 'inline-block';
+
+      formula.textContent = `( ${fv} − ${iv} ) ÷ ${iv} × 100`;
+      formula.style.display = 'block';
+    }
+  </script>
+</body>
+</html>
