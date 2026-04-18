@@ -1,0 +1,1663 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>음력·양력 변환 달력</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Lunar Calendar Library (lunar-javascript) -->
+  <!-- 지원 범위: 1900~2100년 -->
+  <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
+
+  <style>
+    /* ============================================================
+       CSS 변수 & 전역 리셋
+    ============================================================ */
+    :root {
+      /* Light Mode Palette — 화이트 */
+      --bg-page:        #F2F4F7;
+      --bg-surface:     #FFFFFF;
+      --bg-surface2:    #F5F6F8;
+      --bg-hover:       #ECEEF2;
+      --border:         #DDE1E9;
+      --border-light:   #E8EBF0;
+      --text-primary:   #1C2639;
+      --text-secondary: #5A5040;
+      --text-muted:     #9A8E78;
+      --accent:         #8B2C17;       /* 단청 붉은색 */
+      --accent-light:   #C84820;
+      --accent-bg:      #FDE8E0;
+      --lunar-color:    #2A5F8A;       /* 청색 — 음력 */
+      --lunar-bg:       #E5F0FA;
+      --today-bg:       #8B2C17;
+      --today-text:     #FFFFFF;
+      --holiday-color:  #C84820;
+      --selected-bg:    #1C2639;
+      --selected-text:  #FBF7EE;
+      --shadow-sm:      0 2px 8px rgba(30,20,5,0.08);
+      --shadow-md:      0 4px 20px rgba(30,20,5,0.12);
+      --shadow-lg:      0 8px 32px rgba(30,20,5,0.16);
+      --radius:         10px;
+      --radius-lg:      16px;
+      --transition:     0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    [data-theme="dark"] {
+      --bg-page:        #141821;
+      --bg-surface:     #1E2433;
+      --bg-surface2:    #262D40;
+      --bg-hover:       #2E364F;
+      --border:         #3A4260;
+      --border-light:   #303858;
+      --text-primary:   #E8E0CC;
+      --text-secondary: #A09880;
+      --text-muted:     #6A6258;
+      --accent:         #D4895A;
+      --accent-light:   #E8A070;
+      --accent-bg:      #2E1E12;
+      --lunar-color:    #6AAED4;
+      --lunar-bg:       #142233;
+      --today-bg:       #D4895A;
+      --today-text:     #141821;
+      --holiday-color:  #E8806A;
+      --selected-bg:    #D4895A;
+      --selected-text:  #141821;
+      --shadow-sm:      0 2px 8px rgba(0,0,0,0.3);
+      --shadow-md:      0 4px 20px rgba(0,0,0,0.4);
+      --shadow-lg:      0 8px 32px rgba(0,0,0,0.5);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: var(--bg-page);
+      color: var(--text-primary);
+      min-height: 100vh;
+      transition: background var(--transition), color var(--transition);
+      /* 한지 질감 배경 */
+      background-image:
+        radial-gradient(ellipse at 20% 10%, rgba(180,140,80,0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 90%, rgba(100,60,30,0.06) 0%, transparent 50%);
+    }
+
+    /* ============================================================
+       레이아웃
+    ============================================================ */
+    .app-wrapper {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 16px 60px;
+    }
+
+    /* ============================================================
+       헤더
+    ============================================================ */
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .app-title {
+      font-family: 'Noto Serif KR', serif;
+      font-size: clamp(1.3rem, 3vw, 1.8rem);
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .app-title .title-badge {
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.55em;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-weight: 500;
+      letter-spacing: 0;
+      vertical-align: middle;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition);
+      font-size: 1rem;
+    }
+    .btn-icon:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: scale(1.08);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* ============================================================
+       변환 패널
+    ============================================================ */
+    .converter-panel {
+      background: var(--bg-surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow var(--transition);
+    }
+    .converter-panel:hover { box-shadow: var(--shadow-md); }
+
+    .converter-title {
+      font-family: 'Noto Serif KR', serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .converter-grid {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 16px;
+      align-items: end;
+    }
+
+    @media (max-width: 640px) {
+      .converter-grid {
+        grid-template-columns: 1fr;
+      }
+      .converter-arrow { transform: rotate(90deg); margin: 0 auto; }
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .input-label {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      letter-spacing: 0.03em;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    input[type="number"],
+    select {
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 0.9rem;
+      background: var(--bg-surface2);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-primary);
+      padding: 9px 13px;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      outline: none;
+    }
+    input[type="number"]:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(139,44,23,0.12);
+    }
+
+    /* 양력/음력 공통 날짜 입력 행 */
+    .date-inputs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    /* 연도 입력: 4자리 충분히 */
+    .date-inputs .inp-year  { width: 88px; text-align: center; }
+    /* 월/일 입력 */
+    .date-inputs .inp-month { width: 64px; text-align: center; }
+    .date-inputs .inp-day   { width: 64px; text-align: center; }
+
+    /* 하위 호환 — 음력 래퍼 */
+    .lunar-inputs { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+    .leap-checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.83rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 9px 0;
+      white-space: nowrap;
+    }
+    .leap-checkbox-label input[type="checkbox"] {
+      accent-color: var(--accent);
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+    }
+
+    .converter-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      color: var(--text-muted);
+      padding-bottom: 4px;
+      user-select: none;
+    }
+
+    /* 변환 결과 */
+    .converter-result {
+      margin-top: 16px;
+      padding: 14px 18px;
+      background: var(--bg-surface2);
+      border-radius: var(--radius);
+      border-left: 3px solid var(--accent);
+      display: none;
+      animation: slideIn 0.25s ease;
+    }
+    .converter-result.visible { display: block; }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-main {
+      font-family: 'Noto Serif KR', serif;
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .result-details {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .result-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--bg-hover);
+      border-radius: 99px;
+      padding: 2px 10px;
+      font-size: 0.78rem;
+    }
+
+    .error-msg {
+      margin-top: 10px;
+      padding: 10px 14px;
+      background: #FDE8E0;
+      border-radius: var(--radius);
+      color: var(--accent);
+      font-size: 0.85rem;
+      border-left: 3px solid var(--accent);
+      display: none;
+    }
+    [data-theme="dark"] .error-msg { background: var(--accent-bg); }
+    .error-msg.visible { display: block; animation: slideIn 0.2s ease; }
+
+    /* ============================================================
+       버튼
+    ============================================================ */
+    .btn {
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 500;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      padding: 10px 18px;
+      transition: all var(--transition);
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn:active { transform: scale(0.96); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(139,44,23,0.25);
+    }
+    .btn-primary:hover {
+      background: var(--accent-light);
+      box-shadow: 0 4px 16px rgba(139,44,23,0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1.5px solid var(--border);
+    }
+    .btn-outline:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-bg);
+    }
+
+    .btn-today {
+      background: var(--bg-surface);
+      color: var(--accent);
+      border: 1.5px solid var(--accent);
+      font-size: 0.82rem;
+      padding: 7px 14px;
+    }
+    .btn-today:hover {
+      background: var(--accent);
+      color: #fff;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* ============================================================
+       달력 영역
+    ============================================================ */
+    .calendar-section {
+      background: var(--bg-surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* 달력 헤더 (연월 + 이동 버튼) */
+    .calendar-header {
+      padding: 18px 22px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-light);
+      background: var(--bg-surface);
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .cal-nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .cal-nav-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: var(--bg-surface2);
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition);
+    }
+    .cal-nav-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-bg);
+      transform: scale(1.08);
+    }
+    .cal-nav-btn:active { transform: scale(0.93); }
+
+    .cal-month-label {
+      font-family: 'Noto Serif KR', serif;
+      font-size: clamp(1.1rem, 2.5vw, 1.35rem);
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      min-width: 160px;
+      text-align: center;
+    }
+    .cal-month-label span {
+      font-size: 0.75em;
+      font-weight: 400;
+      color: var(--text-muted);
+      margin-left: 6px;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+
+    .cal-header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* 요일 행 */
+    .weekday-row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      background: var(--bg-surface2);
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .weekday-cell {
+      text-align: center;
+      padding: 10px 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+    }
+    .weekday-cell:first-child { color: var(--holiday-color); }
+    .weekday-cell:last-child  { color: var(--lunar-color); }
+
+    /* 날짜 그리드 */
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 슬라이드 애니메이션 */
+    .calendar-grid.slide-left {
+      animation: slideLeft 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .calendar-grid.slide-right {
+      animation: slideRight 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes slideLeft {
+      from { opacity: 0; transform: translateX(30px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes slideRight {
+      from { opacity: 0; transform: translateX(-30px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    /* 날짜 셀 */
+    .day-cell {
+      border-right: 1px solid var(--border-light);
+      border-bottom: 1px solid var(--border-light);
+      padding: 8px 6px 6px;
+      min-height: 72px;
+      cursor: pointer;
+      transition: background var(--transition);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .day-cell:nth-child(7n) { border-right: none; }
+
+    .day-cell:hover:not(.empty) {
+      background: var(--bg-hover);
+    }
+
+    .day-cell.empty {
+      background: var(--bg-surface2);
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    .day-cell.other-month {
+      opacity: 0.35;
+    }
+
+    /* 오늘 */
+    .day-cell.today .solar-num {
+      background: var(--today-bg);
+      color: var(--today-text);
+      border-radius: 50%;
+    }
+
+    /* 선택된 날짜 */
+    .day-cell.selected {
+      background: var(--accent-bg);
+    }
+    .day-cell.selected .solar-num {
+      background: var(--selected-bg);
+      color: var(--selected-text);
+      border-radius: 50%;
+    }
+
+    /* 일요일, 토요일 컬러 */
+    .day-cell.sunday  .solar-num { color: var(--holiday-color); }
+    .day-cell.saturday .solar-num { color: var(--lunar-color); }
+    .day-cell.today .solar-num,
+    .day-cell.selected .solar-num { color: inherit !important; }
+
+    /* 공휴일 */
+    .day-cell.holiday .solar-num { color: var(--holiday-color) !important; }
+    .day-cell.holiday.today .solar-num,
+    .day-cell.holiday.selected .solar-num { color: var(--today-text) !important; }
+
+    .solar-num {
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all var(--transition);
+      flex-shrink: 0;
+    }
+
+    .lunar-num {
+      font-size: 0.68rem;
+      color: var(--lunar-color);
+      letter-spacing: -0.01em;
+      text-align: center;
+      line-height: 1.2;
+      font-weight: 400;
+    }
+    .lunar-num.leap { color: var(--accent); font-weight: 500; }
+
+    .holiday-name {
+      font-size: 0.58rem;
+      color: var(--holiday-color);
+      text-align: center;
+      line-height: 1.1;
+      font-weight: 500;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ============================================================
+       선택 날짜 상세 패널
+    ============================================================ */
+    .detail-panel {
+      border-top: 1px solid var(--border-light);
+      padding: 18px 22px;
+      background: var(--bg-surface2);
+      display: none;
+      animation: slideIn 0.25s ease;
+    }
+    .detail-panel.visible { display: block; }
+
+    .detail-inner {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .detail-date-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: var(--bg-surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 20px;
+      min-width: 110px;
+    }
+
+    .detail-solar-big {
+      font-family: 'Noto Serif KR', serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .detail-solar-ym {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .detail-info {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .detail-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .detail-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 99px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      border: 1.5px solid var(--border);
+      background: var(--bg-surface);
+    }
+
+    .detail-chip.lunar { color: var(--lunar-color); border-color: var(--lunar-bg); background: var(--lunar-bg); }
+    .detail-chip.leap-chip { color: var(--accent); border-color: var(--accent-bg); background: var(--accent-bg); }
+    .detail-chip.holiday-chip { color: var(--holiday-color); }
+
+    .detail-weekday {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* ============================================================
+       범례 (Legend)
+    ============================================================ */
+    .legend-bar {
+      display: flex;
+      gap: 16px;
+      padding: 10px 22px;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-light);
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.74rem;
+      color: var(--text-muted);
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .legend-dot.today { background: var(--today-bg); }
+    .legend-dot.holiday { background: var(--holiday-color); }
+    .legend-dot.lunar { background: var(--lunar-color); }
+    .legend-dot.leap { background: var(--accent); }
+
+    /* ============================================================
+       반응형
+    ============================================================ */
+    @media (max-width: 480px) {
+      .day-cell { min-height: 54px; padding: 5px 3px 4px; }
+      .solar-num { width: 24px; height: 24px; font-size: 0.8rem; }
+      .lunar-num { font-size: 0.6rem; }
+      .holiday-name { display: none; }
+      .cal-month-label { min-width: 120px; font-size: 1.05rem; }
+      .converter-panel { padding: 14px 16px; }
+    }
+
+    /* ============================================================
+       스크롤바
+    ============================================================ */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-page); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+    /* ============================================================
+       툴팁
+    ============================================================ */
+    [title] { cursor: help; }
+  </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+
+  <!-- ===== 헤더 ===== -->
+  <header class="app-header">
+    <h1 class="app-title">
+      음력·양력 달력
+      <span class="title-badge">1900–2100</span>
+    </h1>
+    <div class="header-actions">
+      <button class="btn btn-today" id="btn-goto-today" title="오늘 날짜로 이동">
+        ✦ 오늘
+      </button>
+      <button class="btn-icon" id="btn-dark-toggle" title="다크 모드 전환">🌙</button>
+    </div>
+  </header>
+
+  <!-- ===== 변환 패널 ===== -->
+  <section class="converter-panel" aria-label="날짜 변환">
+    <p class="converter-title">날짜 변환</p>
+
+    <div class="converter-grid">
+      <!-- 입력 -->
+      <div class="input-group">
+        <label class="input-label" for="input-type-select">입력 방식 선택</label>
+        <select id="input-type-select">
+          <option value="solar">양력 → 음력</option>
+          <option value="lunar">음력 → 양력</option>
+        </select>
+
+        <!-- 양력 입력 -->
+        <div id="solar-input-area">
+          <label class="input-label">양력 날짜</label>
+          <div class="date-inputs">
+            <input type="number" id="solar-year-input"  class="inp-year"  placeholder="년" min="1900" max="2100" />
+            <input type="number" id="solar-month-input" class="inp-month" placeholder="월" min="1"    max="12"   />
+            <input type="number" id="solar-day-input"   class="inp-day"   placeholder="일" min="1"    max="31"   />
+          </div>
+        </div>
+
+        <!-- 음력 입력 (초기 숨김) -->
+        <div id="lunar-input-area" style="display:none;">
+          <label class="input-label">음력 날짜</label>
+          <div class="date-inputs lunar-inputs">
+            <input type="number" id="lunar-year-input"  class="inp-year"  placeholder="년" min="1900" max="2100" />
+            <input type="number" id="lunar-month-input" class="inp-month" placeholder="월" min="1"    max="12"   />
+            <input type="number" id="lunar-day-input"   class="inp-day"   placeholder="일" min="1"    max="30"   />
+            <label class="leap-checkbox-label" title="윤달 여부">
+              <input type="checkbox" id="leap-checkbox" />
+              윤달
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 화살표 -->
+      <div class="converter-arrow">⇄</div>
+
+      <!-- 결과 표시 영역 (오른쪽) -->
+      <div class="input-group">
+        <label class="input-label">변환 결과</label>
+        <button class="btn btn-primary" id="btn-convert">변환하기</button>
+      </div>
+    </div>
+
+    <!-- 결과 박스 -->
+    <div class="converter-result" id="converter-result">
+      <div class="result-main" id="result-main-text"></div>
+      <div class="result-details" id="result-detail-tags"></div>
+    </div>
+
+    <!-- 오류 메시지 -->
+    <div class="error-msg" id="error-msg"></div>
+  </section>
+
+  <!-- ===== 달력 ===== -->
+  <section class="calendar-section" aria-label="월별 달력">
+    <div class="calendar-header">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" id="btn-prev-year"  title="이전 해">«</button>
+        <button class="cal-nav-btn" id="btn-prev-month" title="이전 달">‹</button>
+        <div class="cal-month-label" id="cal-month-label">
+          2024년 1월 <span id="cal-lunar-month-hint"></span>
+        </div>
+        <button class="cal-nav-btn" id="btn-next-month" title="다음 달">›</button>
+        <button class="cal-nav-btn" id="btn-next-year"  title="다음 해">»</button>
+      </div>
+      <div class="cal-header-right">
+        <!-- 필요 시 추가 컨트롤 -->
+      </div>
+    </div>
+
+    <!-- 요일 헤더 -->
+    <div class="weekday-row" aria-hidden="true">
+      <div class="weekday-cell">일</div>
+      <div class="weekday-cell">월</div>
+      <div class="weekday-cell">화</div>
+      <div class="weekday-cell">수</div>
+      <div class="weekday-cell">목</div>
+      <div class="weekday-cell">금</div>
+      <div class="weekday-cell">토</div>
+    </div>
+
+    <!-- 날짜 그리드 (JS로 채워짐) -->
+    <div class="calendar-grid" id="calendar-grid" role="grid"></div>
+
+    <!-- 선택 날짜 상세 -->
+    <div class="detail-panel" id="detail-panel">
+      <div class="detail-inner">
+        <div class="detail-date-block">
+          <div class="detail-solar-big" id="detail-solar-day"></div>
+          <div class="detail-solar-ym"  id="detail-solar-ym"></div>
+        </div>
+        <div class="detail-info">
+          <div class="detail-row" id="detail-chips"></div>
+          <div class="detail-weekday" id="detail-weekday"></div>
+          <div class="detail-weekday" id="detail-holiday" style="color:var(--holiday-color); margin-top:4px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 범례 -->
+    <div class="legend-bar">
+      <div class="legend-item">
+        <div class="legend-dot today"></div>오늘
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot holiday"></div>공휴일
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot lunar"></div>음력
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot leap"></div>윤달
+      </div>
+    </div>
+  </section>
+
+</div><!-- /.app-wrapper -->
+
+<script>
+/* ================================================================
+   lunar-javascript 라이브러리 로드 확인 유틸
+   CDN: https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js
+   지원 범위: 1900~2100년
+================================================================ */
+
+/**
+ * LunarUtils
+ * lunar-javascript 라이브러리 래퍼
+ * Solar (양력) ↔ Lunar (음력) 변환
+ */
+const LunarUtils = (() => {
+
+  /**
+   * isLeap 정규화 헬퍼
+   * lunar-javascript 라이브러리는 버전/날짜에 따라
+   *   - 일반 날짜: isLeap 이 메서드(function) → isLeap() === false
+   *   - 윤달 날짜: isLeap 이 boolean true 프로퍼티로 오버라이드 → isLeap() 호출 불가
+   * 두 경우를 모두 안전하게 처리한다.
+   */
+  function getIsLeap(lunarObj) {
+    if (typeof lunarObj.isLeap === 'function') return lunarObj.isLeap();
+    return lunarObj.isLeap === true;
+  }
+
+  // 라이브러리 로드 여부 확인 — 핵심 메서드까지 검증
+  function isLibraryReady() {
+    return typeof Solar !== 'undefined' &&
+           typeof Solar.fromDate === 'function' &&
+           typeof Lunar !== 'undefined' &&
+           typeof LunarYear !== 'undefined';
+  }
+
+  /**
+   * 양력 → 음력 변환
+   * @param {number} year  양력 연
+   * @param {number} month 양력 월 (1-based)
+   * @param {number} day   양력 일
+   * @returns {{ year, month, day, isLeap, yearStr, monthStr, dayStr } | null}
+   */
+  function solarToLunar(year, month, day) {
+    if (!isLibraryReady()) return null;
+    try {
+      // Solar.fromDate 우선 시도, 실패 시 Solar.fromYmd 폴백
+      let solar;
+      try {
+        solar = Solar.fromDate(new Date(year, month - 1, day));
+      } catch(e1) {
+        solar = Solar.fromYmd(year, month, day);
+      }
+      const lunar  = solar.getLunar();
+      if (!lunar) return null;
+      const isLeap = getIsLeap(lunar);
+      return {
+        year:     lunar.getYear(),
+        month:    lunar.getMonth(),
+        day:      lunar.getDay(),
+        isLeap,
+        yearStr:  lunar.getYear() + '년',
+        monthStr: (isLeap ? '윤' : '') + lunar.getMonth() + '월',
+        dayStr:   lunar.getDay() + '일',
+      };
+    } catch(e) {
+      console.warn('[solarToLunar]', year, month, day, '→', e.message);
+      return null;
+    }
+  }
+
+  /**
+   * 음력 → 양력 변환
+   * @param {number}  year    음력 연
+   * @param {number}  month   음력 월 (1-based)
+   * @param {number}  day     음력 일
+   * @param {boolean} isLeap  윤달 여부
+   * @returns {{ year, month, day, dateStr } | null}
+   */
+  function lunarToSolar(year, month, day, isLeap = false) {
+    if (!isLibraryReady()) return null;
+    try {
+      if (!isLeap) {
+        // ── 일반(비윤달) 음력 → 양력 ──────────────────────────────
+        // Lunar.fromYmd: 라이브러리 공식 지원 메서드
+        const lunar = Lunar.fromYmd(year, month, day);
+        const solar = lunar.getSolar();
+        return makeSolarResult(solar);
+      }
+
+      // ── 윤달 처리 ─────────────────────────────────────────────────
+      // LunarYear로 해당 연도의 윤달 번호 확인
+      const lunarYear   = LunarYear.fromYear(year);
+      const leapMonthNo = lunarYear.getLeapMonth(); // 없으면 0 반환
+
+      if (leapMonthNo !== month) return null; // 해당 월에 윤달 없음
+
+      // 윤달 1일의 양력 날짜 탐색:
+      // 일반 해당월 마지막 날부터 최대 35일 앞을 순회하며
+      // 음력 변환 결과가 isLeap() === true 이고 month·day 일치하는 날을 찾는다
+      let anchorSolar;
+      try {
+        anchorSolar = Lunar.fromYmd(year, month, 29).getSolar();
+      } catch(e) {
+        anchorSolar = Lunar.fromYmd(year, month, 1).getSolar();
+      }
+
+      const searchStart = new Date(
+        anchorSolar.getYear(),
+        anchorSolar.getMonth() - 1,
+        anchorSolar.getDay()
+      );
+
+      for (let i = 0; i <= 40; i++) {
+        searchStart.setDate(searchStart.getDate() + 1);
+        const sol = Solar.fromDate(searchStart);
+        const lun = sol.getLunar();
+        if (
+          lun.getYear()  === year  &&
+          lun.getMonth() === month &&
+          getIsLeap(lun)           &&
+          lun.getDay()   === day
+        ) {
+          return makeSolarResult(sol);
+        }
+      }
+      return null; // 탐색 범위 내 해당 날짜 없음
+
+    } catch(e) {
+      // 존재하지 않는 날짜(예: 소월(小月)인 달의 30일) → null 반환이 정상 동작
+      return null;
+    }
+  }
+
+  /** Solar 객체 → 반환값 객체 생성 헬퍼 */
+  function makeSolarResult(solar) {
+    const y = solar.getYear();
+    const m = solar.getMonth();
+    const d = solar.getDay();
+    return {
+      year:    y,
+      month:   m,
+      day:     d,
+      dateStr: `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`,
+    };
+  }
+
+  /**
+   * 윤달 여부 포함한 음력 날짜의 유효성 검증
+   * 실제로 lunarToSolar 변환 성공 여부로 판단
+   */
+  function isValidLunarDate(year, month, day, isLeap) {
+    const result = lunarToSolar(year, month, day, isLeap);
+    return result !== null;
+  }
+
+  return { solarToLunar, lunarToSolar, isLibraryReady, isValidLunarDate };
+})();
+
+
+/* ================================================================
+   HolidayData
+   한국 공휴일 데이터
+   양력 공휴일: 고정 날짜
+   음력 공휴일: 매년 계산 필요
+================================================================ */
+const HolidayData = (() => {
+
+  // 양력 고정 공휴일 (MM-DD 형식)
+  const SOLAR_HOLIDAYS = {
+    '01-01': '신정',
+    '03-01': '삼일절',
+    '05-05': '어린이날',
+    '06-06': '현충일',
+    '08-15': '광복절',
+    '10-03': '개천절',
+    '10-09': '한글날',
+    '12-25': '크리스마스',
+  };
+
+  // 음력 고정 공휴일 (음력 MM-DD 형식)
+  const LUNAR_HOLIDAYS = {
+    '01-01': '설날',
+    '01-02': '설날 연휴',
+    '12-30': '설날 연휴', // 설날 전날 (윤달 없는 경우 음력 12/30 = 설날 전날)
+    '04-08': '부처님오신날',
+    '08-14': '추석 연휴',
+    '08-15': '추석',
+    '08-16': '추석 연휴',
+  };
+
+  // 음력 날짜로 양력 날짜를 구해 Map으로 캐시
+  const _cache = {};
+
+  /**
+   * 특정 연도의 공휴일 Map 반환
+   * @param {number} year 양력 연도
+   * @returns {Object} { 'YYYY-MM-DD': '공휴일명' }
+   */
+  function getHolidaysOfYear(year) {
+    if (_cache[year]) return _cache[year];
+
+    const result = {};
+
+    // 1. 양력 고정 공휴일
+    for (const [mmdd, name] of Object.entries(SOLAR_HOLIDAYS)) {
+      result[`${year}-${mmdd}`] = name;
+    }
+
+    // 2. 음력 공휴일 → 양력 변환
+    if (LunarUtils.isLibraryReady()) {
+      for (const [mmdd, name] of Object.entries(LUNAR_HOLIDAYS)) {
+        const [lm, ld] = mmdd.split('-').map(Number);
+        // 음력 12/30 → 해당 연도 음력 12월의 마지막 날 처리 필요
+        // 설날 전날은 이전 해 음력 12월 마지막 날이므로 별도 처리
+        if (lm === 12 && ld === 30) {
+          // year 양력 기준 → 이전 음력 해(year-1)의 12/30 (해당 날이 올해 양력에 속할 수 있음)
+          try {
+            const sol1 = LunarUtils.lunarToSolar(year, lm, ld, false);
+            if (sol1 && sol1.year === year) result[sol1.dateStr] = name;
+            const sol2 = LunarUtils.lunarToSolar(year - 1, lm, ld, false);
+            if (sol2 && sol2.year === year) result[sol2.dateStr] = name;
+          } catch(e) { /* 날짜가 없는 해도 있음 */ }
+        } else {
+          try {
+            const sol = LunarUtils.lunarToSolar(year, lm, ld, false);
+            if (sol && sol.year === year) result[sol.dateStr] = name;
+          } catch(e) {}
+        }
+      }
+    }
+
+    _cache[year] = result;
+    return result;
+  }
+
+  /**
+   * 특정 양력 날짜의 공휴일명 반환 (없으면 null)
+   */
+  function getHolidayName(year, month, day) {
+    const key = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const holidays = getHolidaysOfYear(year);
+    return holidays[key] || null;
+  }
+
+  return { getHolidaysOfYear, getHolidayName };
+})();
+
+
+/* ================================================================
+   CalendarState
+   현재 달력 상태 (표시 중인 연/월, 선택된 날짜)
+================================================================ */
+const CalendarState = (() => {
+  const now = new Date();
+  let _displayYear  = now.getFullYear();
+  let _displayMonth = now.getMonth() + 1; // 1-based
+  let _selectedDate = null; // { year, month, day } (양력)
+
+  return {
+    get year()          { return _displayYear; },
+    get month()         { return _displayMonth; },
+    get selectedDate()  { return _selectedDate; },
+
+    setDisplay(y, m) {
+      if (y < 1900 || y > 2100) return false;
+      _displayYear  = y;
+      _displayMonth = m;
+      return true;
+    },
+
+    prevMonth() {
+      if (_displayMonth === 1) { _displayYear--;  _displayMonth = 12; }
+      else                     { _displayMonth--; }
+    },
+    nextMonth() {
+      if (_displayMonth === 12) { _displayYear++;  _displayMonth = 1; }
+      else                      { _displayMonth++; }
+    },
+    prevYear() { if (_displayYear > 1900) _displayYear--; },
+    nextYear() { if (_displayYear < 2100) _displayYear++; },
+
+    selectDate(y, m, d) { _selectedDate = { year: y, month: m, day: d }; },
+    clearSelection()    { _selectedDate = null; },
+  };
+})();
+
+
+/* ================================================================
+   CalendarRenderer
+   달력 DOM 렌더링 담당
+================================================================ */
+const CalendarRenderer = (() => {
+
+  const WEEKDAYS_KO = ['일','월','화','수','목','금','토'];
+  const GANZHI_YEAR = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+  const GANZHI_ZHI  = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+  const ZODIAC_KO   = ['쥐','소','호랑이','토끼','용','뱀','말','양','원숭이','닭','개','돼지'];
+
+  // 요일 한국어
+  function getWeekdayName(date) {
+    return WEEKDAYS_KO[date.getDay()] + '요일';
+  }
+
+  // 음력 일(day)을 한자 형식으로 (1일→初一, 15일→十五 등)
+  function lunarDayLabel(day) {
+    const HAN_NUM = ['','一','二','三','四','五','六','七','八','九','十'];
+    if (day === 1)  return '初一';
+    if (day === 10) return '初十';
+    if (day === 20) return '二十';
+    if (day === 30) return '三十';
+    if (day < 10)   return '初' + HAN_NUM[day];
+    if (day < 20)   return '十' + (day === 10 ? '' : HAN_NUM[day - 10]);
+    return '廿' + (day === 20 ? '' : HAN_NUM[day - 20]);
+  }
+
+  // 음력 월 레이블 (1월→正月)
+  function lunarMonthLabel(month, isLeap) {
+    const NAMES = ['正','二','三','四','五','六','七','八','九','十','冬','臘'];
+    return (isLeap ? '윤' : '') + NAMES[month - 1] + '月';
+  }
+
+  /**
+   * 월별 달력 그리드 렌더링
+   * @param {string} direction 'left' | 'right' | '' (애니메이션 방향)
+   */
+  function renderCalendar(direction = '') {
+    const grid  = document.getElementById('calendar-grid');
+    const label = document.getElementById('cal-month-label');
+
+    const year  = CalendarState.year;
+    const month = CalendarState.month;
+
+    // 연월 레이블 업데이트
+    label.innerHTML = `${year}년 ${month}월`;
+
+    // 해당 월 1일의 요일 (0=일)
+    const firstDow = new Date(year, month - 1, 1).getDay();
+    // 해당 월 마지막 날
+    const lastDay  = new Date(year, month, 0).getDate();
+
+    // 그리드 생성
+    const fragment = document.createDocumentFragment();
+
+    // 앞쪽 빈 칸 (이전 달 날짜)
+    const prevLastDay = new Date(year, month - 1, 0).getDate();
+    for (let i = 0; i < firstDow; i++) {
+      const d = prevLastDay - firstDow + 1 + i;
+      const cell = buildDayCell(year, month - 1 || 12, d, true);
+      fragment.appendChild(cell);
+    }
+
+    // 이번 달 날짜
+    for (let d = 1; d <= lastDay; d++) {
+      const cell = buildDayCell(year, month, d, false);
+      fragment.appendChild(cell);
+    }
+
+    // 뒤쪽 빈 칸 (다음 달 날짜) — 42칸 맞춤
+    const total = firstDow + lastDay;
+    const remain = (42 - total) % 7 === 0 && total <= 35 ? 35 - total : 42 - total;
+    for (let d = 1; d <= remain; d++) {
+      const cell = buildDayCell(year, month + 1 > 12 ? 1 : month + 1, d, true);
+      fragment.appendChild(cell);
+    }
+
+    // 기존 내용 교체 + 애니메이션
+    grid.innerHTML = '';
+    grid.appendChild(fragment);
+
+    if (direction) {
+      grid.classList.remove('slide-left', 'slide-right');
+      void grid.offsetWidth; // reflow
+      grid.classList.add(direction === 'left' ? 'slide-left' : 'slide-right');
+    }
+  }
+
+  /**
+   * 날짜 셀 DOM 생성
+   */
+  function buildDayCell(year, month, day, isOtherMonth) {
+    const cell = document.createElement('div');
+    cell.className = 'day-cell';
+    cell.setAttribute('role', 'gridcell');
+
+    if (isOtherMonth) {
+      cell.classList.add('other-month');
+    }
+
+    const dow = new Date(year, month - 1, day).getDay();
+    if (dow === 0) cell.classList.add('sunday');
+    if (dow === 6) cell.classList.add('saturday');
+
+    // 오늘 체크
+    const now = new Date();
+    if (year === now.getFullYear() && month === now.getMonth() + 1 && day === now.getDate()) {
+      cell.classList.add('today');
+    }
+
+    // 선택 날짜 체크
+    const sel = CalendarState.selectedDate;
+    if (sel && sel.year === year && sel.month === month && sel.day === day) {
+      cell.classList.add('selected');
+    }
+
+    // 공휴일 체크
+    const holidayName = HolidayData.getHolidayName(year, month, day);
+    if (holidayName) cell.classList.add('holiday');
+
+    // 음력 변환
+    let lunarLabel = '';
+    let lunarIsLeap = false;
+    if (LunarUtils.isLibraryReady()) {
+      const lunar = LunarUtils.solarToLunar(year, month, day);
+      if (lunar) {
+        lunarIsLeap = lunar.isLeap;
+        // 음력 1일에는 월 표시, 그 외엔 일 표시
+        if (lunar.day === 1) {
+          lunarLabel = lunarMonthLabel(lunar.month, lunar.isLeap);
+        } else {
+          lunarLabel = lunarDayLabel(lunar.day);
+        }
+      }
+    }
+
+    // 양력 날짜 숫자
+    const solarNum = document.createElement('div');
+    solarNum.className = 'solar-num';
+    solarNum.textContent = day;
+    cell.appendChild(solarNum);
+
+    // 음력 날짜
+    if (lunarLabel) {
+      const lunarNum = document.createElement('div');
+      lunarNum.className = 'lunar-num' + (lunarIsLeap ? ' leap' : '');
+      lunarNum.textContent = lunarLabel;
+      cell.appendChild(lunarNum);
+    }
+
+    // 공휴일명
+    if (holidayName) {
+      const hName = document.createElement('div');
+      hName.className = 'holiday-name';
+      hName.textContent = holidayName;
+      cell.appendChild(hName);
+    }
+
+    // 클릭 이벤트
+    if (!isOtherMonth) {
+      cell.addEventListener('click', () => {
+        CalendarState.selectDate(year, month, day);
+        renderCalendar();
+        showDetailPanel(year, month, day);
+      });
+    } else {
+      // 다른 달 날짜 클릭 시 해당 월로 이동
+      cell.style.cursor = 'pointer';
+      cell.addEventListener('click', () => {
+        let ny = year, nm = month;
+        if (month < CalendarState.month) {
+          if (CalendarState.month === 1) { ny = CalendarState.year - 1; nm = 12; }
+          else nm = CalendarState.month - 1;
+        } else {
+          if (CalendarState.month === 12) { ny = CalendarState.year + 1; nm = 1; }
+          else nm = CalendarState.month + 1;
+        }
+        CalendarState.setDisplay(ny, nm);
+        CalendarState.selectDate(year, month, day);
+        renderCalendar();
+        showDetailPanel(year, month, day);
+      });
+    }
+
+    return cell;
+  }
+
+  /**
+   * 선택된 날짜 상세 패널 표시
+   */
+  function showDetailPanel(year, month, day) {
+    const panel     = document.getElementById('detail-panel');
+    const solarDay  = document.getElementById('detail-solar-day');
+    const solarYM   = document.getElementById('detail-solar-ym');
+    const chips     = document.getElementById('detail-chips');
+    const weekdayEl = document.getElementById('detail-weekday');
+    const holidayEl = document.getElementById('detail-holiday');
+
+    const date    = new Date(year, month - 1, day);
+    const weekday = getWeekdayName(date);
+
+    solarDay.textContent = day;
+    solarYM.textContent  = `${year}년 ${month}월`;
+
+    chips.innerHTML = '';
+
+    // 음력 칩
+    if (LunarUtils.isLibraryReady()) {
+      const lunar = LunarUtils.solarToLunar(year, month, day);
+      if (lunar) {
+        const chip = document.createElement('span');
+        chip.className = 'detail-chip lunar';
+        chip.textContent = `🌙 음력 ${lunar.yearStr} ${lunar.monthStr} ${lunar.dayStr}`;
+        chips.appendChild(chip);
+
+        if (lunar.isLeap) {
+          const leapChip = document.createElement('span');
+          leapChip.className = 'detail-chip leap-chip';
+          leapChip.textContent = '윤달';
+          chips.appendChild(leapChip);
+        }
+      }
+    }
+
+    weekdayEl.textContent = `요일: ${weekday}`;
+
+    const hName = HolidayData.getHolidayName(year, month, day);
+    if (hName) {
+      holidayEl.textContent = `🎌 ${hName}`;
+      const hChip = document.createElement('span');
+      hChip.className = 'detail-chip holiday-chip';
+      hChip.textContent = hName;
+      chips.appendChild(hChip);
+      holidayEl.textContent = '';
+    } else {
+      holidayEl.textContent = '';
+    }
+
+    panel.classList.add('visible');
+  }
+
+  function hideDetailPanel() {
+    document.getElementById('detail-panel').classList.remove('visible');
+  }
+
+  return { renderCalendar, showDetailPanel, hideDetailPanel };
+})();
+
+
+/* ================================================================
+   ConversionController
+   변환 패널 UI 로직
+================================================================ */
+const ConversionController = (() => {
+
+  function init() {
+    const select       = document.getElementById('input-type-select');
+    const solarArea    = document.getElementById('solar-input-area');
+    const lunarArea    = document.getElementById('lunar-input-area');
+    const btnConvert   = document.getElementById('btn-convert');
+    const resultBox    = document.getElementById('converter-result');
+    const resultMain   = document.getElementById('result-main-text');
+    const resultTags   = document.getElementById('result-detail-tags');
+    const errorBox     = document.getElementById('error-msg');
+
+    // 오늘 날짜를 기본값으로 (양력 3개 필드)
+    const now = new Date();
+    document.getElementById('solar-year-input').value  = now.getFullYear();
+    document.getElementById('solar-month-input').value = now.getMonth() + 1;
+    document.getElementById('solar-day-input').value   = now.getDate();
+
+    // 입력 방식 전환
+    select.addEventListener('change', () => {
+      const mode = select.value;
+      solarArea.style.display = mode === 'solar' ? '' : 'none';
+      lunarArea.style.display = mode === 'lunar' ? '' : 'none';
+      hideResult();
+    });
+
+    // 변환 버튼
+    btnConvert.addEventListener('click', () => {
+      hideResult();
+      const mode = select.value;
+
+      if (mode === 'solar') {
+        handleSolarToLunar();
+      } else {
+        handleLunarToSolar();
+      }
+    });
+
+    // Enter 키 지원 (양력·음력 모든 number 입력)
+    document.querySelectorAll(
+      '#solar-year-input, #solar-month-input, #solar-day-input, ' +
+      '#lunar-year-input, #lunar-month-input, #lunar-day-input'
+    ).forEach(el => el.addEventListener('keydown', e => {
+      if (e.key === 'Enter') btnConvert.click();
+    }));
+
+    function handleSolarToLunar() {
+      const y = parseInt(document.getElementById('solar-year-input').value);
+      const m = parseInt(document.getElementById('solar-month-input').value);
+      const d = parseInt(document.getElementById('solar-day-input').value);
+
+      if (!y || !m || !d) { showError('년, 월, 일을 모두 입력해 주세요.'); return; }
+      if (y < 1900 || y > 2100) { showError('지원 범위는 1900~2100년입니다.'); return; }
+      if (m < 1  || m > 12)     { showError('월은 1~12 사이여야 합니다.'); return; }
+      if (d < 1  || d > 31)     { showError('일은 1~31 사이여야 합니다.'); return; }
+
+      // 날짜 유효성 검사 (예: 2월 30일 방지)
+      const dateObj = new Date(y, m - 1, d);
+      if (dateObj.getFullYear() !== y || dateObj.getMonth() !== m - 1 || dateObj.getDate() !== d) {
+        showError(`${y}년 ${m}월 ${d}일은 존재하지 않는 날짜입니다.`); return;
+      }
+
+      if (!LunarUtils.isLibraryReady()) { showError('음력 라이브러리를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.'); return; }
+
+      const lunar = LunarUtils.solarToLunar(y, m, d);
+      if (!lunar) { showError('변환에 실패했습니다. 날짜를 확인해 주세요.'); return; }
+
+      const weekday = new Date(y, m - 1, d).toLocaleDateString('ko-KR', { weekday: 'long' });
+      resultMain.textContent = `음력 ${lunar.yearStr} ${lunar.monthStr} ${lunar.dayStr}`;
+      resultTags.innerHTML = `
+        <span class="result-tag">📅 양력 ${y}년 ${m}월 ${d}일</span>
+        <span class="result-tag">🌙 음력 ${lunar.yearStr} ${lunar.monthStr} ${lunar.dayStr}</span>
+        ${lunar.isLeap ? '<span class="result-tag" style="color:var(--accent)">윤달</span>' : ''}
+        <span class="result-tag">${weekday}</span>
+      `;
+      showResult();
+
+      // 달력 해당 월로 이동
+      CalendarState.setDisplay(y, m);
+      CalendarState.selectDate(y, m, d);
+      CalendarRenderer.renderCalendar();
+      CalendarRenderer.showDetailPanel(y, m, d);
+    }
+
+    function handleLunarToSolar() {
+      const y      = parseInt(document.getElementById('lunar-year-input').value);
+      const m      = parseInt(document.getElementById('lunar-month-input').value);
+      const d      = parseInt(document.getElementById('lunar-day-input').value);
+      const isLeap = document.getElementById('leap-checkbox').checked;
+
+      if (!y || !m || !d) { showError('년, 월, 일을 모두 입력해 주세요.'); return; }
+      if (y < 1900 || y > 2100) { showError('지원 범위는 1900~2100년입니다.'); return; }
+      if (m < 1 || m > 12)      { showError('월은 1~12 사이여야 합니다.'); return; }
+      if (d < 1 || d > 30)      { showError('일은 1~30 사이여야 합니다.'); return; }
+
+      if (!LunarUtils.isLibraryReady()) { showError('음력 라이브러리를 불러오는 중입니다.'); return; }
+
+      const solar = LunarUtils.lunarToSolar(y, m, d, isLeap);
+      if (!solar) {
+        if (isLeap) showError(`음력 ${y}년 ${m}월은 윤달이 없거나, 해당 날짜가 존재하지 않습니다.`);
+        else        showError(`음력 ${y}년 ${m}월 ${d}일은 존재하지 않는 날짜입니다.`);
+        return;
+      }
+
+      const weekday = new Date(solar.year, solar.month - 1, solar.day)
+        .toLocaleDateString('ko-KR', { weekday: 'long' });
+
+      resultMain.textContent = `양력 ${solar.year}년 ${solar.month}월 ${solar.day}일`;
+      resultTags.innerHTML = `
+        <span class="result-tag">🌙 음력 ${y}년 ${isLeap ? '윤' : ''}${m}월 ${d}일</span>
+        <span class="result-tag">📅 양력 ${solar.year}년 ${solar.month}월 ${solar.day}일</span>
+        ${isLeap ? '<span class="result-tag" style="color:var(--accent)">윤달</span>' : ''}
+        <span class="result-tag">${weekday}</span>
+      `;
+      showResult();
+
+      // 달력 해당 월로 이동
+      CalendarState.setDisplay(solar.year, solar.month);
+      CalendarState.selectDate(solar.year, solar.month, solar.day);
+      CalendarRenderer.renderCalendar();
+      CalendarRenderer.showDetailPanel(solar.year, solar.month, solar.day);
+    }
+
+    function showResult() {
+      resultBox.classList.add('visible');
+      errorBox.classList.remove('visible');
+    }
+
+    function showError(msg) {
+      errorBox.textContent = '⚠️ ' + msg;
+      errorBox.classList.add('visible');
+      resultBox.classList.remove('visible');
+    }
+
+    function hideResult() {
+      resultBox.classList.remove('visible');
+      errorBox.classList.remove('visible');
+    }
+  }
+
+  return { init };
+})();
+
+
+/* ================================================================
+   App
+   전체 앱 초기화 및 이벤트 바인딩
+================================================================ */
+const App = (() => {
+
+  function init() {
+    // 다크 모드 초기화 (시스템 설정 따름)
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.getElementById('btn-dark-toggle').textContent = '☀️';
+    }
+
+    // 달력 렌더링
+    CalendarRenderer.renderCalendar();
+
+    // 변환 패널 초기화
+    ConversionController.init();
+
+    // 오늘 날짜로 이동
+    document.getElementById('btn-goto-today').addEventListener('click', () => {
+      const now = new Date();
+      CalendarState.setDisplay(now.getFullYear(), now.getMonth() + 1);
+      CalendarState.selectDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
+      CalendarRenderer.renderCalendar('right');
+      CalendarRenderer.showDetailPanel(now.getFullYear(), now.getMonth() + 1, now.getDate());
+    });
+
+    // 다크 모드 토글
+    document.getElementById('btn-dark-toggle').addEventListener('click', () => {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+      document.getElementById('btn-dark-toggle').textContent = isDark ? '🌙' : '☀️';
+    });
+
+    // 이전/다음 월
+    document.getElementById('btn-prev-month').addEventListener('click', () => {
+      CalendarState.prevMonth();
+      CalendarRenderer.renderCalendar('right');
+    });
+    document.getElementById('btn-next-month').addEventListener('click', () => {
+      CalendarState.nextMonth();
+      CalendarRenderer.renderCalendar('left');
+    });
+
+    // 이전/다음 해
+    document.getElementById('btn-prev-year').addEventListener('click', () => {
+      CalendarState.prevYear();
+      CalendarRenderer.renderCalendar('right');
+    });
+    document.getElementById('btn-next-year').addEventListener('click', () => {
+      CalendarState.nextYear();
+      CalendarRenderer.renderCalendar('left');
+    });
+
+    // 키보드 단축키: 좌/우 화살표로 월 이동
+    document.addEventListener('keydown', e => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+      if (e.key === 'ArrowLeft') {
+        CalendarState.prevMonth();
+        CalendarRenderer.renderCalendar('right');
+      } else if (e.key === 'ArrowRight') {
+        CalendarState.nextMonth();
+        CalendarRenderer.renderCalendar('left');
+      }
+    });
+
+    // 터치 스와이프로 월 이동 (모바일)
+    let touchStartX = 0;
+    const calSection = document.querySelector('.calendar-section');
+    calSection.addEventListener('touchstart', e => {
+      touchStartX = e.touches[0].clientX;
+    }, { passive: true });
+    calSection.addEventListener('touchend', e => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(dx) > 50) {
+        if (dx < 0) { CalendarState.nextMonth(); CalendarRenderer.renderCalendar('left'); }
+        else        { CalendarState.prevMonth(); CalendarRenderer.renderCalendar('right'); }
+      }
+    }, { passive: true });
+
+    // 라이브러리 로드 확인 후 재렌더링
+    // (CDN 로드가 늦을 경우 대비)
+    let tries = 0;
+    const checkLib = setInterval(() => {
+      if (LunarUtils.isLibraryReady() || ++tries > 20) {
+        clearInterval(checkLib);
+        CalendarRenderer.renderCalendar();
+      }
+    }, 300);
+  }
+
+  return { init };
+})();
+
+// DOM 준비 후 앱 시작
+document.addEventListener('DOMContentLoaded', () => App.init());
+</script>
+</body>
+</html>
