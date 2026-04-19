@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이자 계산기</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ============================================================
+   CSS 변수 & 기본
+============================================================ */
+:root {
+  --bg:         #dff0fb;
+  --bg2:        #cce6f7;
+  --surface:    #ffffff;
+  --surface2:   #eaf5fd;
+  --border:     rgba(100,160,210,0.18);
+  --border-act: rgba(14,136,196,0.45);
+  --accent:     #0e88c4;
+  --accent2:    #0ab4c8;
+  --accent3:    #f59e0b;
+  --accent4:    #7c6fcf;
+  --text:       #1a3a52;
+  --text-muted: #4d7a9a;
+  --text-dim:   #8ab4cc;
+  --danger:     #e05c5c;
+  --radius:     16px;
+  --radius-sm:  10px;
+  --shadow:     0 8px 32px rgba(80,160,220,0.13);
+  --glow:       0 0 40px rgba(14,136,196,0.12);
+  --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+/* DM Mono 슬래시 제로 비활성화 */
+* { font-feature-settings: "zero" 0; }
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+body {
+  font-family:'Pretendard',-apple-system,sans-serif;
+  background:var(--bg); color:var(--text);
+  min-height:100vh; line-height:1.6; overflow-x:hidden;
+}
+body::before {
+  content:''; position:fixed; top:-200px; left:-200px; width:700px; height:700px;
+  background:radial-gradient(circle,rgba(14,136,196,.09) 0%,transparent 70%);
+  pointer-events:none; z-index:0;
+}
+body::after {
+  content:''; position:fixed; bottom:-200px; right:-200px; width:600px; height:600px;
+  background:radial-gradient(circle,rgba(10,180,200,.07) 0%,transparent 70%);
+  pointer-events:none; z-index:0;
+}
+.app-wrapper {
+  position:relative; z-index:1; max-width:1200px; width:100%;
+  margin:0 auto; padding:40px 24px 80px; box-sizing:border-box; overflow-x:hidden;
+}
+
+/* 헤더 */
+.app-header { text-align:center; margin-bottom:48px; animation:fadeDown .6s ease both; }
+.app-header .badge {
+  display:inline-block; font-family:'DM Mono',monospace; font-size:11px;
+  letter-spacing:.15em; color:var(--accent); background:rgba(14,136,196,.1);
+  border:1px solid rgba(14,136,196,.25); padding:4px 14px; border-radius:100px; margin-bottom:16px;
+}
+.app-header h1 {
+  font-family:'DM Serif Display',serif; font-size:clamp(2rem,5vw,3.2rem); font-weight:700;
+  letter-spacing:-.02em;
+  color:#0d88c4;
+  line-height:1.15;
+}
+.app-header p { margin-top:12px; color:var(--text-muted); font-size:.9rem; font-weight:300; }
+
+/* 레이아웃 */
+.input-panel { min-width:0; width:100%; max-width:100%; }
+.main-grid {
+  display:grid; grid-template-columns:420px 1fr;
+  gap:24px; align-items:start; width:100%; min-width:0;
+}
+@media(max-width:960px){ .main-grid { grid-template-columns:minmax(0,1fr); } }
+
+/* 카드 */
+.card {
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  padding:28px; box-shadow:var(--shadow); animation:fadeUp .5s ease both;
+  overflow:hidden; min-width:0; width:100%; max-width:100%; box-sizing:border-box;
+}
+.card-title {
+  font-size:.75rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--text-muted); margin-bottom:20px; display:flex; align-items:center; gap:8px;
+}
+.card-title::before {
+  content:''; display:block; width:3px; height:14px; background:var(--accent); border-radius:2px; flex-shrink:0;
+}
+
+/* 세그먼트 */
+.seg-group {
+  display:flex; background:var(--bg2); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:4px; gap:4px; margin-bottom:24px;
+  width:100%; box-sizing:border-box;
+}
+.seg-btn {
+  flex:1 1 0; min-width:0; background:none; border:none; color:var(--text-muted);
+  font-family:'Pretendard',sans-serif; font-size:.875rem; font-weight:500;
+  padding:9px 8px; border-radius:7px; cursor:pointer; transition:var(--transition);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.seg-btn.active { background:var(--accent); color:#fff; box-shadow:0 2px 8px rgba(14,136,196,.25); }
+.seg-btn:hover:not(.active){ color:var(--text); }
+
+/* 폼 요소 */
+.form-section { margin-bottom:6px; }
+.form-section+.form-section { margin-top:18px; }
+.form-label {
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:.8rem; font-weight:500; color:var(--text-muted); margin-bottom:8px;
+}
+.form-label .val-badge {
+  font-family:'DM Mono',monospace; font-size:.8rem; color:var(--accent2);
+  background:rgba(14,136,196,.1); padding:1px 8px; border-radius:4px; flex-shrink:0;
+}
+.input-wrap { position:relative; display:flex; align-items:center; }
+.input-wrap .suffix,.input-wrap .prefix {
+  position:absolute; font-size:.8rem; color:var(--text-muted); pointer-events:none;
+}
+.input-wrap .prefix { left:12px; }
+.input-wrap .suffix { right:12px; }
+input[type="text"],input[type="number"],input[type="date"],select {
+  width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-sm);
+  color:var(--text); font-family:'DM Mono',monospace; font-size:.9rem; padding:11px 14px;
+  outline:none; transition:border-color var(--transition),box-shadow var(--transition); -webkit-appearance:none;
+}
+input[type="text"]:focus,input[type="number"]:focus,input[type="date"]:focus,select:focus {
+  border-color:var(--border-act); box-shadow:0 0 0 3px rgba(14,136,196,.1);
+}
+.has-suffix input { padding-right:30px; }
+select {
+  cursor:pointer; appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237a8aaa' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 12px center; padding-right:32px;
+}
+select option { background:var(--surface); }
+.slider-wrap { margin-top:8px; }
+input[type="range"] {
+  -webkit-appearance:none; width:100%; height:4px; background:var(--bg2);
+  border-radius:2px; outline:none; cursor:pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance:none; width:18px; height:18px; background:var(--accent);
+  border-radius:50%; box-shadow:0 0 0 3px rgba(14,136,196,.2); cursor:pointer; transition:box-shadow var(--transition);
+}
+input[type="range"]::-webkit-slider-thumb:hover { box-shadow:0 0 0 6px rgba(14,136,196,.18); }
+.slider-minmax {
+  display:flex; justify-content:space-between; font-size:.7rem;
+  color:var(--text-dim); margin-top:4px; font-family:'DM Mono',monospace;
+}
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.divider { height:1px; background:var(--border); margin:24px 0; }
+.collapsible { overflow:hidden; transition:max-height .35s ease,opacity .35s ease; }
+.collapsible.hidden { max-height:0; opacity:0; pointer-events:none; }
+.collapsible.visible { max-height:900px; opacity:1; }
+.error-msg { font-size:.75rem; color:var(--danger); margin-top:5px; display:none; align-items:center; gap:4px; }
+.error-msg.show { display:flex; }
+.hint-text { font-size:.7rem; color:var(--text-dim); margin-top:4px; }
+
+/* 세금 유형 버튼 */
+.tax-type-group { display:flex; gap:6px; margin-bottom:10px; }
+.tax-type-btn {
+  flex:1 1 0; min-width:0; background:var(--bg2); border:1px solid var(--border);
+  border-radius:7px; color:var(--text-muted); font-family:'Pretendard',sans-serif;
+  font-size:.75rem; font-weight:500; padding:8px 6px; cursor:pointer; transition:var(--transition);
+  text-align:center; line-height:1.4;
+}
+.tax-type-btn.active { border-color:var(--border-act); color:var(--accent); background:rgba(14,136,196,.08); }
+.tax-type-btn small { font-size:.68rem; color:inherit; opacity:.8; }
+
+/* 결과 표시 (세전/세후) */
+.tax-toggle { display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+.tax-toggle label { font-size:.8rem; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; gap:5px; }
+.tax-toggle input[type="radio"] { accent-color:var(--accent); cursor:pointer; }
+
+/* 초기화 버튼 */
+.btn-reset {
+  width:100%; margin-top:20px; padding:11px; background:none; border:1px solid var(--border);
+  border-radius:var(--radius-sm); color:var(--text-muted); font-family:'Pretendard',sans-serif;
+  font-size:.85rem; font-weight:500; cursor:pointer; transition:var(--transition);
+  display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.btn-reset:hover { border-color:var(--danger); color:var(--danger); background:rgba(248,113,113,.05); }
+
+/* 결과 패널 */
+.results-panel { display:flex; flex-direction:column; gap:20px; }
+.empty-state {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:60px 24px; text-align:center; color:var(--text-dim);
+  border:1px dashed var(--border); border-radius:var(--radius); gap:14px;
+}
+.empty-state svg { opacity:.3; }
+.empty-state p { font-size:.9rem; }
+
+/* 요약 카드 */
+.summary-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+@media(max-width:600px){ .summary-grid { grid-template-columns:1fr; } }
+.stat-card {
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm);
+  padding:18px 20px; transition:border-color var(--transition),transform var(--transition); animation:fadeUp .4s ease both;
+}
+.stat-card:hover { border-color:rgba(14,136,196,.25); transform:translateY(-1px); }
+.stat-card.highlight {
+  background:linear-gradient(135deg,rgba(14,136,196,.08) 0%,rgba(10,180,200,.05) 100%);
+  border-color:rgba(14,136,196,.3); box-shadow:var(--glow);
+}
+.stat-label { font-size:.7rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px; }
+.stat-value { font-family:'DM Serif Display',serif; font-size:1.5rem; color:var(--text); letter-spacing:-.02em; line-height:1.2; }
+.stat-card.highlight .stat-value { color:var(--accent); }
+.stat-sub { font-size:.72rem; color:var(--text-muted); margin-top:4px; font-family:'DM Mono',monospace; }
+.stat-badge {
+  display:inline-block; font-size:.65rem; font-family:'DM Mono',monospace;
+  background:rgba(167,139,250,.12); color:var(--accent4); border:1px solid rgba(167,139,250,.2);
+  padding:2px 7px; border-radius:4px; margin-top:6px;
+}
+
+/* 요약 문장 */
+.summary-sentence {
+  background:rgba(14,136,196,.07); border:1px solid rgba(14,136,196,.2);
+  border-radius:var(--radius-sm); padding:14px 18px; font-size:.875rem;
+  color:var(--accent); font-weight:500; line-height:1.6;
+}
+
+/* 액션 버튼 */
+.result-actions { display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; }
+.action-btn {
+  background:none; border:1px solid var(--border); border-radius:var(--radius-sm);
+  color:var(--text-muted); font-family:'Pretendard',sans-serif; font-size:.78rem; font-weight:500;
+  padding:7px 14px; cursor:pointer; transition:var(--transition); display:flex; align-items:center; gap:6px;
+}
+.action-btn:hover { border-color:var(--accent); color:var(--accent); background:rgba(14,136,196,.06); }
+
+/* 차트 */
+.chart-tabs { display:flex; gap:4px; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:12px; }
+.chart-tab {
+  background:none; border:none; color:var(--text-muted); font-family:'Pretendard',sans-serif;
+  font-size:.8rem; font-weight:500; padding:6px 14px; border-radius:6px; cursor:pointer; transition:var(--transition);
+}
+.chart-tab.active { background:rgba(14,136,196,.12); color:var(--accent); }
+.chart-tab:hover:not(.active) { color:var(--text); background:var(--surface2); }
+.chart-container { position:relative; height:240px; }
+
+/* 비교/시나리오 테이블 */
+.compare-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.compare-table { width:100%; border-collapse:collapse; font-size:.82rem; min-width:400px; }
+.compare-table thead th {
+  font-size:.68rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--text-muted); padding:9px 12px; text-align:right; background:var(--bg2); border-bottom:1px solid var(--border);
+}
+.compare-table thead th:first-child { text-align:left; }
+.compare-table tbody tr { border-bottom:1px solid rgba(14,136,196,.08); transition:background var(--transition); }
+.compare-table tbody tr:hover { background:rgba(14,136,196,.04); }
+.compare-table tbody tr.hi-row { background:rgba(14,136,196,.06); }
+.compare-table tbody td { padding:10px 12px; text-align:right; font-family:'DM Mono',monospace; font-size:.82rem; }
+.compare-table tbody td:first-child { text-align:left; font-family:'Pretendard',sans-serif; color:var(--text-muted); font-size:.8rem; }
+.compare-table tr.hi-row td:first-child { color:var(--accent); }
+.best-cell { color:var(--accent)!important; }
+.worst-cell { color:var(--danger)!important; }
+.up-cell { color:var(--danger)!important; }
+.down-cell { color:var(--accent2)!important; }
+.base-row { background:rgba(14,136,196,.06)!important; }
+
+/* 스케줄 테이블 */
+.table-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px; }
+.table-count { font-size:.75rem; color:var(--text-muted); font-family:'DM Mono',monospace; }
+.table-actions { display:flex; gap:6px; align-items:center; }
+.btn-sm {
+  background:none; border:1px solid var(--border); color:var(--text-muted);
+  font-family:'Pretendard',sans-serif; font-size:.75rem; padding:5px 12px;
+  border-radius:6px; cursor:pointer; transition:var(--transition); white-space:nowrap;
+}
+.btn-sm:hover { border-color:var(--accent); color:var(--accent); }
+.table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.table-note {
+  font-size:.72rem; color:var(--text-muted); margin-top:10px; padding:8px 12px;
+  background:rgba(245,158,11,.04); border-left:2px solid var(--accent3); border-radius:0 4px 4px 0;
+}
+table { width:100%; border-collapse:collapse; font-size:.82rem; min-width:480px; }
+thead th {
+  font-size:.7rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--text-muted); padding:10px 10px; text-align:right;
+  background:var(--bg2); border-bottom:1px solid var(--border); white-space:nowrap;
+}
+thead th:first-child { text-align:center; }
+tbody tr { border-bottom:1px solid rgba(14,136,196,.08); transition:background var(--transition); }
+tbody tr:hover { background:rgba(14,136,196,.04); }
+tbody tr.grace-row { background:rgba(245,158,11,.03); }
+tbody tr:last-child { border-bottom:none; }
+tbody td { padding:8px 10px; text-align:right; font-family:'DM Mono',monospace; color:var(--text); }
+tbody td:first-child { text-align:center; color:var(--text-muted); font-size:.75rem; }
+tbody td:nth-child(2) { font-family:'Pretendard',sans-serif; font-size:.78rem; color:var(--text-muted); }
+.principal-col { color:var(--accent2)!important; }
+.interest-col  { color:var(--accent3)!important; }
+.balance-col   { color:var(--text)!important; }
+.grace-label   { color:var(--accent3)!important; font-size:.7rem!important; }
+tfoot td {
+  padding:10px 10px; text-align:right; font-family:'DM Mono',monospace; font-weight:600;
+  border-top:1px solid var(--border); background:var(--surface2); color:var(--accent); font-size:.82rem;
+}
+tfoot td:first-child,tfoot td:nth-child(2) { color:var(--text-muted); }
+
+/* 애니메이션 */
+@keyframes fadeDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeUp   { from{opacity:0;transform:translateY(16px)}  to{opacity:1;transform:translateY(0)} }
+.card:nth-child(2){animation-delay:.05s} .card:nth-child(3){animation-delay:.1s}
+.stat-card:nth-child(1){animation-delay:0s} .stat-card:nth-child(2){animation-delay:.05s}
+.stat-card:nth-child(3){animation-delay:.1s} .stat-card:nth-child(4){animation-delay:.15s}
+
+/* 모바일 */
+@media(max-width:768px){
+  .app-wrapper{padding:24px 16px 60px}
+  .card{padding:20px}
+  .form-row{grid-template-columns:1fr}
+  .result-actions{justify-content:flex-start}
+  .tax-type-group{gap:4px}
+}
+
+/* 인쇄 */
+@media print{
+  body{background:#fff;color:#111}
+  .input-panel,.action-btn,.btn-reset,.btn-sm,.chart-tabs,
+  .seg-group,.slider-wrap,.tax-toggle,.result-actions{display:none!important}
+  .main-grid{grid-template-columns:1fr}
+  .card{box-shadow:none;border:1px solid #ddd}
+  .stat-value,.stat-label{color:#111!important}
+}
+</style>
+</head>
+<body>
+<div class="app-wrapper">
+
+  <header class="app-header">
+    <div class="badge">FINANCIAL CALCULATOR</div>
+    <h1>이자 계산기</h1>
+    <p>적금 · 대출 · 단리 · 복리 · 거치기간 · 상환방식 비교 · 금리 시나리오</p>
+  </header>
+
+  <div class="main-grid">
+
+    <!-- ================================================
+         입력 패널
+    ================================================ -->
+    <div class="input-panel">
+      <div class="card">
+
+        <div class="card-title">상품 유형</div>
+        <div class="seg-group">
+          <button class="seg-btn" data-type="deposit" onclick="setProductType('deposit')">🏦 예금</button>
+          <button class="seg-btn active" data-type="savings" onclick="setProductType('savings')">💰 적금</button>
+          <button class="seg-btn" data-type="loan" onclick="setProductType('loan')">💳 대출</button>
+        </div>
+
+        <div class="card-title">이자 방식</div>
+        <div class="seg-group">
+          <button class="seg-btn active" data-interest="simple" onclick="setInterestType('simple')">단리</button>
+          <button class="seg-btn" data-interest="compound" onclick="setInterestType('compound')">복리</button>
+        </div>
+
+        <div class="divider"></div>
+        <div class="card-title">기본 정보</div>
+
+        <!-- 원금 -->
+        <div class="form-section" id="principalSection">
+          <div class="form-label">
+            <span id="principalLabel">원금</span>
+            <span class="val-badge" id="principalDisplay">100,000원</span>
+          </div>
+          <div class="input-wrap has-suffix">
+            <input type="text" id="principal" placeholder="10,000,000" oninput="onPrincipalInput(this)">
+            <span class="suffix">원</span>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" id="principalSlider" min="100000" max="500000000" step="100000" value="100000" oninput="syncSlider('principal',this.value)">
+            <div class="slider-minmax"><span>10만</span><span>5억</span></div>
+          </div>
+          <div class="error-msg" id="principalErr">⚠ 유효한 금액을 입력해주세요.</div>
+        </div>
+
+        <!-- 연 이자율 -->
+        <div class="form-section">
+          <div class="form-label">
+            <span>연 이자율</span>
+            <span class="val-badge" id="rateDisplay">0.10%</span>
+          </div>
+          <div class="input-wrap has-suffix">
+            <input type="number" id="rate" value="0.1" min="0.01" max="50" step="0.1" oninput="syncFromInput('rate');calculate()">
+            <span class="suffix">%</span>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" id="rateSlider" min="0.1" max="30" step="0.1" value="0.1" oninput="syncSlider('rate',this.value)">
+            <div class="slider-minmax"><span>0.1%</span><span>30%</span></div>
+          </div>
+          <div class="error-msg" id="rateErr">⚠ 이자율은 0보다 커야 합니다.</div>
+        </div>
+
+        <!-- 기간 -->
+        <div class="form-section">
+          <div class="form-label">
+            <span>기간</span>
+            <span class="val-badge" id="termDisplay">1개월</span>
+          </div>
+          <div class="form-row">
+            <div class="input-wrap has-suffix">
+              <input type="number" id="term" value="1" min="1" max="600" step="1" oninput="syncFromInput('term');calculate()">
+              <span class="suffix">개월</span>
+            </div>
+            <select id="termType" onchange="calculate()">
+              <option value="months">개월</option>
+              <option value="years">년</option>
+            </select>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" id="termSlider" min="1" max="120" step="1" value="1" oninput="syncSlider('term',this.value)">
+            <div class="slider-minmax"><span>1개월</span><span>120개월</span></div>
+          </div>
+          <div class="error-msg" id="termErr">⚠ 기간은 1 이상이어야 합니다.</div>
+        </div>
+
+        <!-- 시작일 -->
+        <div class="form-section">
+          <div class="form-label"><span>시작일</span></div>
+          <div class="input-wrap">
+            <input type="date" id="startDate" onchange="calculate()">
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- 적금 설정 -->
+        <div class="collapsible visible" id="savingsSection">
+          <div class="card-title">적금 설정</div>
+          <div class="form-section">
+            <div class="form-label">
+              <span>월 납입 금액</span>
+              <span class="val-badge" id="monthlyDisplay">10,000원</span>
+            </div>
+            <div class="input-wrap has-suffix">
+              <input type="text" id="monthly" placeholder="500,000" oninput="onMonthlyInput(this)">
+              <span class="suffix">원</span>
+            </div>
+            <div class="slider-wrap">
+              <input type="range" id="monthlySlider" min="10000" max="5000000" step="10000" value="10000" oninput="syncSlider('monthly',this.value)">
+              <div class="slider-minmax"><span>1만</span><span>500만</span></div>
+            </div>
+          </div>
+          <div class="divider"></div>
+        </div>
+
+        <!-- 복리 주기 -->
+        <div class="collapsible hidden" id="compoundSection">
+          <div class="card-title">복리 주기</div>
+          <div class="form-section">
+            <select id="compoundFreq" onchange="calculate()">
+              <option value="12">월 복리 (12회/년)</option>
+              <option value="4">분기 복리 (4회/년)</option>
+              <option value="1">연 복리 (1회/년)</option>
+            </select>
+          </div>
+          <div class="divider"></div>
+        </div>
+
+        <!-- 대출 설정 -->
+        <div class="collapsible hidden" id="loanSection">
+          <div class="card-title">대출 설정</div>
+          <div class="form-section">
+            <div class="form-label"><span>상환 방식</span></div>
+            <select id="repayType" onchange="calculate()">
+              <option value="equal_payment">원리금 균등상환</option>
+              <option value="equal_principal">원금 균등상환</option>
+              <option value="bullet">만기 일시상환</option>
+            </select>
+          </div>
+
+          <!-- 거치기간 [P1 신규] -->
+          <div class="form-section">
+            <div class="form-label">
+              <span>거치기간</span>
+              <span class="val-badge" id="graceDisplay">0개월</span>
+            </div>
+            <div class="input-wrap has-suffix">
+              <input type="number" id="gracePeriod" value="0" min="0" max="120" step="1" oninput="syncFromInput('grace');updateGraceDisplay();calculate()">
+              <span class="suffix">개월</span>
+            </div>
+            <div class="slider-wrap">
+              <input type="range" id="graceSlider" min="0" max="60" step="1" value="0" oninput="syncSlider('grace',this.value)">
+              <div class="slider-minmax"><span>없음</span><span>60개월</span></div>
+            </div>
+            <div class="hint-text">거치기간 동안은 이자만 납부합니다</div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-label"><span>중도상환수수료</span></div>
+            <div class="form-row">
+              <div class="input-wrap has-suffix">
+                <input type="number" id="prepayFeeRate" value="0" min="0" max="5" step="0.1" oninput="calculate()" placeholder="0">
+                <span class="suffix">%</span>
+              </div>
+              <div class="input-wrap has-suffix">
+                <input type="text" id="prepayFeeAmt" oninput="calculate()" placeholder="0">
+                <span class="suffix">원</span>
+              </div>
+            </div>
+            <div class="hint-text">% 또는 금액 중 하나만 입력</div>
+          </div>
+          <div class="divider"></div>
+        </div>
+
+        <!-- 세금 유형 [P1 신규] -->
+        <div class="card-title">세금 유형</div>
+        <div class="tax-type-group">
+          <button class="tax-type-btn active" data-tax="normal"        onclick="setTaxType('normal')">일반과세<br><small>15.4%</small></button>
+          <button class="tax-type-btn"         data-tax="preferential" onclick="setTaxType('preferential')">세금우대<br><small>9.5%</small></button>
+          <button class="tax-type-btn"         data-tax="exempt"       onclick="setTaxType('exempt')">비과세<br><small>0%</small></button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="card-title">결과 표시</div>
+        <div class="tax-toggle">
+          <label><input type="radio" name="taxView" value="before" checked onchange="renderResults()"> 세전</label>
+          <label><input type="radio" name="taxView" value="after"  onchange="renderResults()"> 세후</label>
+          <label><input type="radio" name="taxView" value="both"   onchange="renderResults()"> 모두 표시</label>
+        </div>
+
+        <button class="btn-reset" onclick="resetAll()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.11"/>
+          </svg>
+          초기화
+        </button>
+      </div>
+    </div>
+
+    <!-- ================================================
+         결과 패널
+    ================================================ -->
+    <div class="results-panel" id="resultsPanel">
+
+      <div class="empty-state" id="emptyState">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2M12 12v4M10 14h4"/>
+        </svg>
+        <p>좌측에서 조건을 입력하면<br>계산 결과가 여기에 표시됩니다.</p>
+      </div>
+
+      <div id="resultContent" style="display:none;flex-direction:column;gap:20px;">
+
+        <!-- 액션 버튼 [P2] -->
+        <div class="result-actions">
+          <button class="action-btn" onclick="downloadCSV()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            CSV 다운로드
+          </button>
+          <button class="action-btn" onclick="window.print()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+            </svg>
+            인쇄
+          </button>
+        </div>
+
+        <div class="summary-sentence" id="summarySentence"></div>
+        <div class="summary-grid"    id="summaryGrid"></div>
+
+        <!-- 차트 -->
+        <div class="card" id="chartCard">
+          <div class="chart-tabs">
+            <button class="chart-tab active" onclick="switchChart(0,this)">잔액 추이</button>
+            <button class="chart-tab"        onclick="switchChart(1,this)">원금 vs 이자</button>
+          </div>
+          <div class="chart-container"><canvas id="chart1"></canvas></div>
+          <div class="chart-container" style="display:none"><canvas id="chart2"></canvas></div>
+        </div>
+
+        <!-- 대출 상환방식 비교 [P2] -->
+        <div class="card" id="repayCompareCard" style="display:none">
+          <div class="card-title">상환방식 비교</div>
+          <div class="compare-wrap">
+            <table class="compare-table" id="repayCompareTable"></table>
+          </div>
+        </div>
+
+        <!-- 금리 시나리오 [P2] -->
+        <div class="card" id="scenarioCard">
+          <div class="card-title">금리 시나리오</div>
+          <div class="compare-wrap">
+            <table class="compare-table" id="scenarioTable"></table>
+          </div>
+        </div>
+
+        <!-- 스케줄 테이블 -->
+        <div class="card" id="scheduleCard">
+          <div class="table-header">
+            <div class="card-title" style="margin-bottom:0">월별 납입 스케줄</div>
+            <div class="table-actions">
+              <span class="table-count" id="tableCount"></span>
+              <button class="btn-sm" id="btnShowAll" onclick="toggleShowAll()">전체 보기</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table id="scheduleTable">
+              <thead id="scheduleHead"></thead>
+              <tbody id="scheduleBody"></tbody>
+              <tfoot id="scheduleFoot"></tfoot>
+            </table>
+          </div>
+          <div class="table-note" id="tableNote" style="display:none"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   상태
+============================================================ */
+const state = {
+  productType:  'savings',
+  interestType: 'simple',
+  taxType:      'normal',
+  schedule:     [],
+  lastResult:   null,
+  showAll:      false
+};
+let chart1 = null, chart2 = null;
+
+/* ============================================================
+   초기화
+============================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  const t = new Date();
+  document.getElementById('startDate').value = t.toISOString().slice(0,10);
+  document.getElementById('principal').value  = fmtNum(100000);
+  document.getElementById('monthly').value    = fmtNum(10000);
+  document.getElementById('principalDisplay').textContent = wonLabel(100000);
+  document.getElementById('monthlyDisplay').textContent   = wonLabel(10000);
+  calculate();
+});
+
+/* ============================================================
+   세그먼트 전환
+============================================================ */
+function setProductType(type) {
+  state.productType = type;
+  qsa('.seg-btn[data-type]').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+
+  // 적금: 원금 숨김, 월납입 표시 / 예금·대출: 원금 표시, 월납입 숨김
+  const isSavings = type === 'savings';
+  const isDeposit = type === 'deposit';
+  const isLoan    = type === 'loan';
+
+  qs('#principalSection').style.display = isSavings ? 'none' : 'block';
+  qs('#savingsSection').className = 'collapsible ' + (isSavings ? 'visible' : 'hidden');
+  qs('#loanSection').className    = 'collapsible ' + (isLoan    ? 'visible' : 'hidden');
+
+  qs('#principalLabel').textContent =
+    isLoan ? '대출 원금' : isDeposit ? '예금 원금' : '원금';
+  qs('#principalErr').classList.remove('show');
+  calculate();
+}
+
+function setInterestType(type) {
+  state.interestType = type;
+  qsa('.seg-btn[data-interest]').forEach(b => b.classList.toggle('active', b.dataset.interest === type));
+  qs('#compoundSection').className = 'collapsible ' + (type === 'compound' ? 'visible' : 'hidden');
+  calculate();
+}
+
+function setTaxType(type) {
+  state.taxType = type;
+  qsa('.tax-type-btn').forEach(b => b.classList.toggle('active', b.dataset.tax === type));
+  calculate();
+}
+
+function getTaxRate() {
+  return state.taxType === 'normal' ? 0.154 : state.taxType === 'preferential' ? 0.095 : 0;
+}
+
+/* ============================================================
+   슬라이더 / 입력 동기화
+============================================================ */
+function syncSlider(field, val) {
+  const v = parseFloat(val);
+  if (field === 'principal') { qs('#principal').value = fmtNum(v); qs('#principalDisplay').textContent = wonLabel(v); }
+  else if (field === 'monthly') { qs('#monthly').value = fmtNum(v); qs('#monthlyDisplay').textContent = wonLabel(v); }
+  else if (field === 'grace') { qs('#gracePeriod').value = v; qs('#graceDisplay').textContent = v + '개월'; }
+  else { qs('#'+field).value = v; }
+  const sl = qs('#' + field + 'Slider');
+  if (sl) sl.value = v;
+  updateBadges();
+  calculate();
+}
+
+function syncFromInput(field) {
+  const fid = field === 'grace' ? 'gracePeriod' : field;
+  const sl  = qs('#' + field + 'Slider');
+  const v   = parseFloat(qs('#'+fid).value);
+  if (!isNaN(v) && sl) sl.value = Math.min(Math.max(v, +sl.min), +sl.max);
+  updateBadges();
+}
+
+function updateGraceDisplay() {
+  const v = parseInt(qs('#gracePeriod').value) || 0;
+  qs('#graceDisplay').textContent = v + '개월';
+}
+
+function onPrincipalInput(el) {
+  const raw = parseNum(el.value);
+  el.value = raw === '' ? '' : fmtNum(raw);
+  const sl = qs('#principalSlider');
+  if (sl && raw !== '') sl.value = Math.min(raw, +sl.max);
+  qs('#principalDisplay').textContent = raw === '' ? '0원' : wonLabel(raw);
+  calculate();
+}
+
+function onMonthlyInput(el) {
+  const raw = parseNum(el.value);
+  el.value = raw === '' ? '' : fmtNum(raw);
+  const sl = qs('#monthlySlider');
+  if (sl && raw !== '') sl.value = Math.min(raw, +sl.max);
+  qs('#monthlyDisplay').textContent = raw === '' ? '0원' : wonLabel(raw);
+  calculate();
+}
+
+function updateBadges() {
+  const r = parseFloat(qs('#rate').value);
+  const t = parseInt(qs('#term').value);
+  const tt = qs('#termType').value;
+  if (!isNaN(r)) qs('#rateDisplay').textContent = r.toFixed(2) + '%';
+  if (!isNaN(t)) qs('#termDisplay').textContent = t + (tt === 'years' ? '년' : '개월');
+}
+
+/* ============================================================
+   숫자 유틸
+============================================================ */
+const qs  = s => document.querySelector(s);
+const qsa = s => document.querySelectorAll(s);
+function fmtNum(n) { return (n === '' || isNaN(n)) ? '' : Math.floor(n).toLocaleString('ko-KR'); }
+function parseNum(s) { if (!s) return ''; const n = parseFloat(String(s).replace(/,/g,'')); return isNaN(n) ? '' : n; }
+function wonLabel(n) {
+  if (isNaN(n) || n === '') return '0원';
+  return Math.round(n).toLocaleString('ko-KR') + '원';
+}
+function comma(n) { return Math.round(n).toLocaleString('ko-KR'); }
+function r2(n)    { return Math.round(n * 100) / 100; }
+
+/* ============================================================
+   유효성 검사
+============================================================ */
+function validateInputs() {
+  const isSavings = state.productType === 'savings';
+  const p = parseNum(qs('#principal').value);
+  const m = parseNum(qs('#monthly').value);
+  const r = parseFloat(qs('#rate').value);
+  const t = parseInt(qs('#term').value);
+
+  // 적금: 월납입금 검사 / 예금·대출: 원금 검사
+  const okP = isSavings ? (m !== '' && m > 0) : (p !== '' && p > 0);
+  const okR = !isNaN(r) && r > 0;
+  const okT = !isNaN(t) && t >= 1;
+
+  qs('#principalErr').classList.toggle('show', !okP && !isSavings);
+  qs('#rateErr').classList.toggle('show', !okR);
+  qs('#termErr').classList.toggle('show', !okT);
+  return okP && okR && okT;
+}
+
+/* ============================================================
+   메인 계산
+============================================================ */
+function calculate() {
+  updateBadges();
+  if (!validateInputs()) {
+    qs('#emptyState').style.display = 'flex';
+    qs('#resultContent').style.display = 'none';
+    return;
+  }
+  const principal  = parseNum(qs('#principal').value);
+  const annualRate = parseFloat(qs('#rate').value) / 100;
+  const termInput  = parseInt(qs('#term').value);
+  const termMonths = qs('#termType').value === 'years' ? termInput * 12 : termInput;
+  const startDate  = qs('#startDate').value;
+
+  const result = state.productType === 'savings'
+    ? calcSavings(annualRate, termMonths, startDate)
+    : state.productType === 'deposit'
+    ? calcDeposit(principal, annualRate, termMonths, startDate)
+    : calcLoan(principal, annualRate, termMonths, startDate);
+
+  state.schedule = result.schedule;
+  state.lastResult = result;
+  renderResults(result);
+}
+
+/* ============================================================
+   적금 계산 (월납입 전용 — 초기 원금 없음)
+   단리: 이자 = 월납입 × (연이율/12) × 남은개월수 합산 (만기 일괄 수령)
+   복리: 유효월이율 적용, 매월 잔액 복리 누적
+============================================================ */
+function calcSavings(annualRate, termMonths, startDate) {
+  const monthly  = parseNum(qs('#monthly').value) || 0;
+  const compFreq = parseInt(qs('#compoundFreq').value) || 12;
+  const TAX      = getTaxRate();
+  let schedule = [], totalInterest = 0;
+  const totalPaid = monthly * termMonths;
+
+  if (state.interestType === 'simple') {
+    /* ── 단리: 각 납입금의 귀속이자 = 납입금 × (연이율/12) × 남은개월수 ── */
+    let cumPrincipal = 0;
+    for (let i = 1; i <= termMonths; i++) {
+      cumPrincipal  += monthly;
+      const attrInt  = r2(monthly * (annualRate / 12) * (termMonths - i + 1));
+      totalInterest += attrInt;
+      schedule.push({
+        no: i, date: addMonths(startDate, i-1),
+        payment: monthly, principal: monthly,
+        interest: attrInt, balance: r2(cumPrincipal),
+        isSimpleAttr: true
+      });
+    }
+    totalInterest = r2(totalInterest);
+    const taxAmt   = r2(totalInterest * TAX);
+    const intAfter = r2(totalInterest - taxAmt);
+    return {
+      type:'savings', interestType:'simple', principal: monthly,
+      totalPaid, finalAmount: r2(totalPaid + totalInterest),
+      finalAfterTax: r2(totalPaid + intAfter),
+      totalInterestBefore: totalInterest, totalInterestAfter: intAfter,
+      taxAmount: taxAmt, taxRate: TAX, termMonths, annualRate, schedule, APY: null
+    };
+
+  } else {
+    /* ── 복리: 유효월이율로 매월 잔액 복리 누적 ── */
+    const effR = Math.pow(1 + annualRate / compFreq, compFreq / 12) - 1;
+    const APY  = Math.pow(1 + annualRate / compFreq, compFreq) - 1;
+    let balance = 0;
+    for (let i = 1; i <= termMonths; i++) {
+      balance += monthly;
+      const int = r2(balance * effR);
+      balance   = r2(balance + int);
+      totalInterest += int;
+      schedule.push({
+        no: i, date: addMonths(startDate, i-1),
+        payment: monthly, principal: monthly,
+        interest: int, balance
+      });
+    }
+    totalInterest = r2(totalInterest);
+    const taxAmt   = r2(totalInterest * TAX);
+    const intAfter = r2(totalInterest - taxAmt);
+    return {
+      type:'savings', interestType:'compound', principal: monthly,
+      totalPaid, finalAmount: r2(balance),
+      finalAfterTax: r2(balance - taxAmt),
+      totalInterestBefore: totalInterest, totalInterestAfter: intAfter,
+      taxAmount: taxAmt, taxRate: TAX, termMonths, annualRate, compFreq, schedule,
+      APY, effR
+    };
+  }
+}
+
+/* ============================================================
+   예금 계산 (목돈 일시 예치)
+   단리: 이자 = 원금 × 연이율 × (개월/12)
+   복리: FV = 원금 × (1 + 연이율/n)^(n × 개월/12)
+============================================================ */
+function calcDeposit(principal, annualRate, termMonths, startDate) {
+  const compFreq = parseInt(qs('#compoundFreq').value) || 12;
+  const TAX      = getTaxRate();
+  let schedule = [], totalInterest = 0;
+
+  if (state.interestType === 'simple') {
+    /* ── 단리: 이자 = 원금 × 연이율 × (개월수/12) ── */
+    const totalInt = r2(principal * annualRate * (termMonths / 12));
+    for (let i = 1; i <= termMonths; i++) {
+      const monthInt = r2(principal * (annualRate / 12));
+      totalInterest += monthInt;
+      schedule.push({
+        no: i, date: addMonths(startDate, i-1),
+        payment: i === 1 ? principal : 0,
+        principal: i === 1 ? principal : 0,
+        interest: monthInt,
+        balance: r2(principal),
+        isSimpleAttr: true
+      });
+    }
+    totalInterest = totalInt; // 정확한 값으로 덮어씀
+    const taxAmt   = r2(totalInterest * TAX);
+    const intAfter = r2(totalInterest - taxAmt);
+    return {
+      type:'savings', productSubType:'deposit', interestType:'simple', principal,
+      totalPaid: principal, finalAmount: r2(principal + totalInterest),
+      finalAfterTax: r2(principal + intAfter),
+      totalInterestBefore: totalInterest, totalInterestAfter: intAfter,
+      taxAmount: taxAmt, taxRate: TAX, termMonths, annualRate, schedule, APY: null
+    };
+
+  } else {
+    /* ── 복리: 매월 복리 적용 ── */
+    const effR = Math.pow(1 + annualRate / compFreq, compFreq / 12) - 1;
+    const APY  = Math.pow(1 + annualRate / compFreq, compFreq) - 1;
+    let balance = principal;
+    for (let i = 1; i <= termMonths; i++) {
+      const int = r2(balance * effR);
+      balance   = r2(balance + int);
+      totalInterest += int;
+      schedule.push({
+        no: i, date: addMonths(startDate, i-1),
+        payment: i === 1 ? principal : 0,
+        principal: i === 1 ? principal : 0,
+        interest: int, balance
+      });
+    }
+    totalInterest = r2(totalInterest);
+    const taxAmt   = r2(totalInterest * TAX);
+    const intAfter = r2(totalInterest - taxAmt);
+    return {
+      type:'savings', productSubType:'deposit', interestType:'compound', principal,
+      totalPaid: principal, finalAmount: r2(balance),
+      finalAfterTax: r2(balance - taxAmt),
+      totalInterestBefore: totalInterest, totalInterestAfter: intAfter,
+      taxAmount: taxAmt, taxRate: TAX, termMonths, annualRate, compFreq, schedule,
+      APY, effR
+    };
+  }
+}
+
+/* ============================================================
+   [P0 수정 + P1 신규] 대출 계산
+   - 이자방식(단리/복리)에 따른 유효 월이율 적용
+   - 거치기간 지원
+============================================================ */
+function calcLoan(principal, annualRate, termMonths, startDate) {
+  const repayType = qs('#repayType').value;
+  const grace     = Math.min(parseInt(qs('#gracePeriod').value)||0, termMonths-1);
+  const compFreq  = parseInt(qs('#compoundFreq').value) || 12;
+
+  /* [P0 수정] 이자방식에 따른 유효 월이율 */
+  const effR = state.interestType === 'compound'
+    ? Math.pow(1 + annualRate / compFreq, compFreq / 12) - 1
+    : annualRate / 12;
+
+  const feeRate = parseFloat(qs('#prepayFeeRate').value) || 0;
+  const feeAmt  = parseNum(qs('#prepayFeeAmt').value) || 0;
+  const prepayFee = feeAmt > 0 ? feeAmt : r2(principal * feeRate / 100);
+
+  let schedule = [], totalPay = 0, totalInt = 0;
+
+  /* 거치기간: 이자만 납부 */
+  for (let i = 1; i <= grace; i++) {
+    const interest = r2(principal * effR);
+    totalInt += interest; totalPay += interest;
+    schedule.push({ no:i, date:addMonths(startDate,i), payment:interest, principal:0, interest, balance:principal, isGrace:true });
+  }
+
+  const repayN = termMonths - grace;
+
+  if (repayType === 'equal_payment') {
+    /* 원리금 균등상환 */
+    const mp = effR === 0
+      ? r2(principal / repayN)
+      : r2(principal * effR * Math.pow(1+effR,repayN) / (Math.pow(1+effR,repayN)-1));
+    let bal = principal;
+    for (let i = 1; i <= repayN; i++) {
+      const no  = grace + i;
+      const int = r2(bal * effR);
+      const p   = i === repayN ? bal : r2(mp - int);
+      bal = r2(Math.max(bal - p, 0));
+      totalInt += int; totalPay += p + int;
+      schedule.push({ no, date:addMonths(startDate,grace+i), payment:r2(p+int), principal:p, interest:int, balance:bal });
+    }
+  } else if (repayType === 'equal_principal') {
+    /* 원금 균등상환 */
+    const baseP = principal / repayN;
+    let bal = principal;
+    for (let i = 1; i <= repayN; i++) {
+      const no  = grace + i;
+      const int = r2(bal * effR);
+      const p   = i === repayN ? bal : r2(baseP);
+      bal = r2(Math.max(bal - p, 0));
+      totalInt += int; totalPay += p + int;
+      schedule.push({ no, date:addMonths(startDate,grace+i), payment:r2(p+int), principal:p, interest:int, balance:bal });
+    }
+  } else {
+    /* 만기 일시상환 */
+    const mi = r2(principal * effR);
+    for (let i = 1; i <= repayN; i++) {
+      const no   = grace + i;
+      const isLast = i === repayN;
+      const pay  = isLast ? principal + mi : mi;
+      totalInt += mi; totalPay += pay;
+      schedule.push({ no, date:addMonths(startDate,grace+i), payment:pay, principal:isLast?principal:0, interest:mi, balance:isLast?0:principal });
+    }
+  }
+
+  totalInt = r2(totalInt); totalPay = r2(totalPay);
+  /* APR: 총비용(이자+수수료) / 원금 / 년수 */
+  const APR = r2((totalInt + prepayFee) / principal / (termMonths / 12) * 100);
+  const repayStart = schedule.find(s => !s.isGrace);
+
+  return {
+    type:'loan', principal, repayType, gracePeriod:grace, prepayFee,
+    totalPaid:totalPay, totalInterestBefore:totalInt, totalInterestAfter:totalInt,
+    taxAmount:0, taxRate:0, termMonths, annualRate, APR, effR,
+    monthlyPayment: repayType === 'equal_payment' ? repayStart?.payment : null,
+    firstRepayPay: repayStart?.payment || 0,
+    lastPay: schedule[schedule.length-1]?.payment || 0,
+    schedule
+  };
+}
+
+/* ============================================================
+   [P2] 상환방식 비교
+============================================================ */
+function calcRepayComparison(principal, annualRate, termMonths) {
+  const grace    = Math.min(parseInt(qs('#gracePeriod').value)||0, termMonths-1);
+  const compFreq = parseInt(qs('#compoundFreq').value)||12;
+  const effR     = state.interestType === 'compound'
+    ? Math.pow(1+annualRate/compFreq,compFreq/12)-1 : annualRate/12;
+  const repayN   = termMonths - grace;
+  const graceInt = r2(grace * principal * effR);
+
+  return ['equal_payment','equal_principal','bullet'].map(method => {
+    let totalInt = graceInt, firstPay = 0, lastPay = 0;
+    if (method === 'equal_payment') {
+      const mp = effR===0 ? r2(principal/repayN)
+        : r2(principal*effR*Math.pow(1+effR,repayN)/(Math.pow(1+effR,repayN)-1));
+      let bal=principal;
+      for(let i=1;i<=repayN;i++){
+        const int=r2(bal*effR); const p=i===repayN?bal:r2(mp-int);
+        bal=r2(Math.max(bal-p,0)); totalInt+=int;
+        if(i===1)firstPay=r2(p+int); if(i===repayN)lastPay=r2(p+int);
+      }
+    } else if (method === 'equal_principal') {
+      const bp=principal/repayN; let bal=principal;
+      for(let i=1;i<=repayN;i++){
+        const int=r2(bal*effR); const p=i===repayN?bal:r2(bp);
+        bal=r2(Math.max(bal-p,0)); totalInt+=int;
+        if(i===1)firstPay=r2(p+int); if(i===repayN)lastPay=r2(p+int);
+      }
+    } else {
+      const mi=r2(principal*effR);
+      totalInt+=mi*repayN; firstPay=mi; lastPay=principal+mi;
+    }
+    return { method, totalInt:r2(totalInt), firstPay, lastPay, totalPay:r2(principal+totalInt) };
+  });
+}
+
+/* ============================================================
+   [P2] 금리 시나리오
+============================================================ */
+function calcScenarios(principal, baseRate, termMonths) {
+  const deltas   = [-2, -1, -0.5, 0, 0.5, 1, 2];
+  const monthly  = parseNum(qs('#monthly').value) || 0;
+  const compFreq = parseInt(qs('#compoundFreq').value) || 12;
+  const grace    = Math.min(parseInt(qs('#gracePeriod').value)||0, termMonths-1);
+
+  return deltas.map(delta => {
+    const r = Math.max(0.001, baseRate + delta/100);
+    const effR = state.interestType==='compound'
+      ? Math.pow(1+r/compFreq,compFreq/12)-1 : r/12;
+    let totalInt=0, monthlyPay=null;
+
+    if (state.productType === 'savings') {
+      if (state.interestType === 'simple') {
+        for(let i=1;i<=termMonths;i++){
+          const dep=(i===1?principal:0)+monthly;
+          totalInt+=dep*(r/12)*(termMonths-i+1);
+        }
+      } else {
+        let bal=0;
+        for(let i=1;i<=termMonths;i++){
+          const dep=(i===1?principal:0)+monthly;
+          bal+=dep; bal+=bal*effR;
+        }
+        totalInt=bal-(principal+monthly*termMonths);
+      }
+    } else {
+      const repayN=termMonths-grace;
+      totalInt=grace*r2(principal*effR);
+      const rt=qs('#repayType').value;
+      if(rt==='equal_payment'){
+        const mp=effR===0?r2(principal/repayN):r2(principal*effR*Math.pow(1+effR,repayN)/(Math.pow(1+effR,repayN)-1));
+        monthlyPay=mp;
+        let bal=principal;
+        for(let i=1;i<=repayN;i++){
+          const int=r2(bal*effR);const p=i===repayN?bal:r2(mp-int);
+          bal=r2(Math.max(bal-p,0));totalInt+=int;
+        }
+      } else if(rt==='equal_principal'){
+        const bp=principal/repayN; let bal=principal;
+        for(let i=1;i<=repayN;i++){
+          const int=r2(bal*effR);const p=i===repayN?bal:r2(bp);
+          bal=r2(Math.max(bal-p,0));totalInt+=int;
+          if(i===1)monthlyPay=r2(p+int);
+        }
+      } else {
+        const mi=r2(principal*effR);
+        totalInt+=mi*repayN; monthlyPay=mi;
+      }
+    }
+    return { delta, rate:r*100, totalInt:r2(totalInt), monthlyPay };
+  });
+}
+
+/* ============================================================
+   날짜 유틸
+============================================================ */
+function addMonths(dateStr, months) {
+  if (!dateStr) return '-';
+  const d = new Date(dateStr);
+  d.setMonth(d.getMonth() + months);
+  return d.toISOString().slice(0,10);
+}
+
+/* ============================================================
+   결과 렌더링
+============================================================ */
+function renderResults(result) {
+  if (!result) { if (!state.lastResult) return; result = state.lastResult; }
+  const taxView    = qs('input[name="taxView"]:checked')?.value || 'before';
+  const showBefore = taxView === 'before' || taxView === 'both';
+  const showAfter  = taxView === 'after'  || taxView === 'both';
+
+  qs('#emptyState').style.display    = 'none';
+  qs('#resultContent').style.display = 'flex';
+
+  /* 요약 문장 */
+  const iLabel   = state.interestType === 'simple' ? '단리' : '복리';
+  const taxLabel = state.taxType==='normal' ? '일반과세 15.4%'
+    : state.taxType==='preferential' ? '세금우대 9.5%' : '비과세';
+  const pLabel   = state.productType==='deposit' ? '예금' : state.productType==='savings' ? '적금' : '대출';
+  let summary = '';
+  if (result.type === 'savings') {
+    summary = `[${pLabel}] 연 <strong>${(result.annualRate*100).toFixed(2)}%</strong> ${iLabel} (${taxLabel}) 기준, `
+      + `${result.termMonths}개월 후 세전 이자 <strong>${comma(result.totalInterestBefore)}원</strong>, `
+      + `세후 실수령액 <strong>${comma(result.finalAfterTax)}원</strong>.`
+      + (result.APY ? ` 실효연이율(APY) <strong>${(result.APY*100).toFixed(3)}%</strong>.` : '');
+  } else {
+    const rLabel = {equal_payment:'원리금 균등',equal_principal:'원금 균등',bullet:'만기 일시'}[result.repayType];
+    summary = `연 <strong>${(result.annualRate*100).toFixed(2)}%</strong> ${rLabel}상환 (${iLabel}) 기준, `
+      + `총 이자 <strong>${comma(result.totalInterestBefore)}원</strong>, `
+      + `총 상환 <strong>${comma(result.totalPaid)}원</strong>.`
+      + (result.gracePeriod>0 ? ` 거치 ${result.gracePeriod}개월 포함.` : '')
+      + ` 연간 총비용률 APR <strong>${result.APR}%</strong>.`;
+  }
+  qs('#summarySentence').innerHTML = summary;
+
+  /* 요약 카드 */
+  const grid = qs('#summaryGrid');
+  grid.innerHTML = '';
+  let cards = [];
+  if (result.type === 'savings') {
+    cards.push({ label:'총 납입 금액',       value:comma(result.totalPaid)+'원',               sub:`원금 ${comma(result.principal)}원 포함` });
+    if (showBefore) cards.push({ label:'세전 이자',         value:comma(result.totalInterestBefore)+'원', sub:`세금 ${comma(result.taxAmount)}원 (${(result.taxRate*100).toFixed(1)}%)` });
+    if (showAfter)  cards.push({ label:'세후 이자',         value:comma(result.totalInterestAfter)+'원',  sub:taxLabel+' 적용' });
+    cards.push({ label:'최종 수령액 (세후)', value:comma(result.finalAfterTax)+'원', sub:`세전 ${comma(result.finalAmount)}원`, hi:true, badge:result.APY?`APY ${(result.APY*100).toFixed(3)}%`:null });
+  } else {
+    cards.push({ label:'대출 원금',           value:comma(result.principal)+'원',     sub:'' });
+    cards.push({ label:'총 이자',             value:comma(result.totalInterestBefore)+'원', sub:`유효 월이율 ${(result.effR*100).toFixed(4)}%` });
+    cards.push({ label:'총 상환 금액',        value:comma(result.totalPaid)+'원',     sub:'원금+이자', hi:true, badge:`APR ${result.APR}%` });
+    if (result.repayType==='equal_payment')
+      cards.push({ label:'월 납입금 (균등)',  value:comma(result.monthlyPayment)+'원', sub:`${result.termMonths}개월 동일` });
+    else if (result.repayType==='equal_principal')
+      cards.push({ label:'1회차 납입금',      value:comma(result.firstRepayPay)+'원', sub:`최종 ${comma(result.lastPay)}원` });
+    else
+      cards.push({ label:'월 이자 납입',      value:comma(result.firstRepayPay)+'원', sub:`만기 원금 ${comma(result.principal)}원 일시상환` });
+    if (result.prepayFee > 0)
+      cards.push({ label:'중도상환수수료',    value:comma(result.prepayFee)+'원', sub:'' });
+  }
+  cards.forEach((c,i) => {
+    const d = document.createElement('div');
+    d.className = 'stat-card' + (c.hi?' highlight':'');
+    d.style.animationDelay = (i*.05)+'s';
+    d.innerHTML = `<div class="stat-label">${c.label}</div>
+      <div class="stat-value">${c.value}</div>
+      ${c.sub ? `<div class="stat-sub">${c.sub}</div>` : ''}
+      ${c.badge ? `<div class="stat-badge">${c.badge}</div>` : ''}`;
+    grid.appendChild(d);
+  });
+
+  renderCharts(result);
+
+  /* 상환방식 비교 */
+  const rcCard = qs('#repayCompareCard');
+  if (result.type === 'loan') { rcCard.style.display='block'; renderRepayCompare(result); }
+  else rcCard.style.display='none';
+
+  /* 금리 시나리오 */
+  renderScenario(result);
+
+  renderTable(result);
+}
+
+/* ============================================================
+   상환방식 비교 렌더링
+============================================================ */
+function renderRepayCompare(result) {
+  const data   = calcRepayComparison(result.principal, result.annualRate, result.termMonths);
+  const labels = { equal_payment:'원리금 균등', equal_principal:'원금 균등', bullet:'만기 일시' };
+  const minInt = Math.min(...data.map(d=>d.totalInt));
+  const maxInt = Math.max(...data.map(d=>d.totalInt));
+  qs('#repayCompareTable').innerHTML = `
+    <thead><tr>
+      <th style="text-align:left">상환 방식</th>
+      <th>초기 월납입금</th><th>최종 월납입금</th><th>총 이자</th><th>총 상환금</th>
+    </tr></thead>
+    <tbody>${data.map(d=>{
+      const cur  = d.method === result.repayType;
+      const best = d.totalInt === minInt && minInt !== maxInt;
+      const worst= d.totalInt === maxInt && minInt !== maxInt;
+      return `<tr class="${cur?'hi-row':''}">
+        <td>${labels[d.method]}${cur?' ✦':''}</td>
+        <td>${comma(d.firstPay)}원</td>
+        <td>${comma(d.lastPay)}원</td>
+        <td class="${best?'best-cell':worst?'worst-cell':''}">${comma(d.totalInt)}원</td>
+        <td>${comma(d.totalPay)}원</td>
+      </tr>`;
+    }).join('')}</tbody>`;
+}
+
+/* ============================================================
+   금리 시나리오 렌더링
+============================================================ */
+function renderScenario(result) {
+  const sc     = calcScenarios(result.principal, result.annualRate, result.termMonths);
+  const isLoan = result.type === 'loan';
+  const showMp = isLoan;
+  qs('#scenarioTable').innerHTML = `
+    <thead><tr>
+      <th style="text-align:center">금리 변동</th>
+      <th style="text-align:right">적용 금리</th>
+      <th style="text-align:right">총 이자</th>
+      ${showMp?'<th style="text-align:right">월 납입금</th>':''}
+    </tr></thead>
+    <tbody>${sc.map(s=>{
+      const base   = s.delta === 0;
+      const upDown = s.delta > 0 ? 'up-cell' : s.delta < 0 ? 'down-cell' : '';
+      const dStr   = s.delta===0?'기준':(s.delta>0?'+':'')+s.delta+'%p';
+      return `<tr class="${base?'base-row':''}">
+        <td style="text-align:center" class="${upDown}">${dStr}</td>
+        <td class="${upDown}">${s.rate.toFixed(2)}%</td>
+        <td class="${upDown}">${comma(s.totalInt)}원</td>
+        ${showMp?`<td class="${upDown}">${s.monthlyPay!=null?comma(s.monthlyPay)+'원':'-'}</td>`:''}
+      </tr>`;
+    }).join('')}</tbody>`;
+}
+
+/* ============================================================
+   차트 렌더링
+============================================================ */
+function renderCharts(result) {
+  const sched = result.schedule;
+  const step  = Math.max(1, Math.ceil(sched.length / 60));
+  const pts   = sched.filter((_,i)=>i%step===0||i===sched.length-1);
+  const labels   = pts.map(r=>r.date?.slice(0,7)||r.no+'회');
+  const balances = pts.map(r=>r.balance);
+  const prims    = pts.map(r=>r.principal);
+  const ints     = pts.map(r=>r.interest);
+
+  if (chart1) chart1.destroy();
+  const ctx1 = qs('#chart1').getContext('2d');
+  const g1   = ctx1.createLinearGradient(0,0,0,240);
+  g1.addColorStop(0,'rgba(14,136,196,.22)'); g1.addColorStop(1,'rgba(14,136,196,0)');
+  const lineLabel = result.type==='savings'
+    ? (result.interestType==='simple'?'납입원금 누적':'잔액 (복리)') : '대출 잔액';
+  chart1 = new Chart(ctx1, {
+    type:'line',
+    data:{ labels, datasets:[{ label:lineLabel, data:balances, borderColor:'#0e88c4',
+      backgroundColor:g1, borderWidth:2, pointRadius:pts.length>24?0:3, pointHoverRadius:5, fill:true, tension:.35 }] },
+    options: cOpts('원')
+  });
+
+  if (chart2) chart2.destroy();
+  const ctx2 = qs('#chart2').getContext('2d');
+  const base = cOpts('원');
+  chart2 = new Chart(ctx2, {
+    type:'bar',
+    data:{ labels, datasets:[
+      { label:'원금', data:prims, backgroundColor:'rgba(14,136,196,.65)', borderRadius:3, borderSkipped:false },
+      { label:'이자', data:ints,  backgroundColor:'rgba(245,158,11,.65)',  borderRadius:3, borderSkipped:false }
+    ]},
+    options:{ ...base,
+      plugins:{ ...base.plugins, legend:{ display:true, labels:{ color:'#4d7a9a', font:{size:11}, boxWidth:12 } } },
+      scales:{ ...base.scales, x:{...base.scales.x,stacked:true}, y:{...base.scales.y,stacked:true} }
+    }
+  });
+}
+
+function cOpts(unit) {
+  return {
+    responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{display:false},
+      tooltip:{
+        backgroundColor:'#ffffff', borderColor:'rgba(14,136,196,.2)', borderWidth:1,
+        titleColor:'#4d7a9a', bodyColor:'#1a3a52',
+        titleFont:{family:'DM Mono',size:11}, bodyFont:{family:'DM Mono',size:12},
+        callbacks:{ label:ctx=>` ${ctx.dataset.label}: ${comma(ctx.raw)}${unit}` }
+      }
+    },
+    scales:{
+      x:{ ticks:{color:'#8ab4cc',font:{size:10,family:'DM Mono'},maxTicksLimit:8}, grid:{color:'rgba(14,136,196,.06)'}, border:{color:'rgba(14,136,196,.1)'} },
+      y:{ ticks:{color:'#8ab4cc',font:{size:10,family:'DM Mono'},
+            callback:v=>v>=1e8?(v/1e8).toFixed(1)+'억':v>=1e4?Math.round(v/1e4)+'만':v},
+          grid:{color:'rgba(14,136,196,.06)'}, border:{color:'rgba(14,136,196,.1)'} }
+    }
+  };
+}
+
+function switchChart(idx, el) {
+  qsa('.chart-tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+  qsa('.chart-container').forEach((c,i)=>c.style.display=i===idx?'block':'none');
+}
+
+/* ============================================================
+   스케줄 테이블 렌더링
+============================================================ */
+function renderTable(result) {
+  const sched   = result.schedule;
+  const PREVIEW = 12;
+  state.showAll = state.showAll || sched.length <= PREVIEW;
+  const rows    = state.showAll ? sched : sched.slice(0, PREVIEW);
+  const isSimple = result.type==='savings' && result.interestType==='simple';
+
+  qs('#scheduleHead').innerHTML = `<tr>
+    <th>회차</th><th>납입일</th><th>납입금액</th>
+    <th>${result.type==='savings'?'납입원금':'원금'}</th>
+    <th>${isSimple?'귀속이자(만기지급)':'이자'}</th>
+    <th>${isSimple?'납입원금 누적':result.type==='savings'?'누적잔액':'잔액'}</th>
+  </tr>`;
+
+  qs('#scheduleBody').innerHTML = rows.map(r => `
+    <tr class="${r.isGrace?'grace-row':''}">
+      <td>${r.no}</td>
+      <td>${r.date||'-'}</td>
+      <td>${comma(r.payment)}원</td>
+      <td class="${r.isGrace?'grace-label':'principal-col'}">${r.isGrace?'(거치)':comma(r.principal)+'원'}</td>
+      <td class="interest-col">${comma(r.interest)}원</td>
+      <td class="balance-col">${comma(r.balance)}원</td>
+    </tr>`).join('');
+
+  const totPay  = r2(sched.reduce((s,r)=>s+r.payment,  0));
+  const totPrin = r2(sched.reduce((s,r)=>s+r.principal, 0));
+  const totInt  = r2(sched.reduce((s,r)=>s+r.interest,  0));
+  qs('#scheduleFoot').innerHTML = `<tr>
+    <td colspan="2">합 계</td>
+    <td>${comma(totPay)}원</td>
+    <td>${comma(totPrin)}원</td>
+    <td>${comma(totInt)}원</td>
+    <td>—</td>
+  </tr>`;
+
+  qs('#tableCount').textContent = `총 ${sched.length}회`;
+  const btn = qs('#btnShowAll');
+  if (sched.length > PREVIEW) {
+    btn.style.display = 'block';
+    btn.textContent   = state.showAll ? '접기' : `전체 보기 (${sched.length}회)`;
+  } else {
+    btn.style.display = 'none';
+  }
+
+  const note = qs('#tableNote');
+  if (isSimple) {
+    note.style.display = 'block';
+    note.textContent   = '※ 단리 적금: 귀속이자는 각 납입금의 만기까지 이자(만기 일괄 수령)입니다. '
+      + '잔액은 납입원금 누적 기준이며 이자 미포함입니다.';
+  } else if (result.gracePeriod > 0) {
+    note.style.display = 'block';
+    note.textContent   = `※ 거치기간 ${result.gracePeriod}개월 동안은 이자만 납부하며, 이후 ${result.termMonths-result.gracePeriod}개월간 원금을 상환합니다.`;
+  } else {
+    note.style.display = 'none';
+  }
+}
+
+function toggleShowAll() {
+  state.showAll = !state.showAll;
+  if (state.lastResult) renderTable(state.lastResult);
+  const sched = state.lastResult?.schedule || [];
+  if (sched.length > 12) qs('#btnShowAll').textContent = state.showAll ? '접기' : `전체 보기 (${sched.length}회)`;
+}
+
+/* ============================================================
+   [P1] CSV 다운로드
+============================================================ */
+function downloadCSV() {
+  if (!state.lastResult) return;
+  const R  = state.lastResult;
+  const isSimple = R.type==='savings' && R.interestType==='simple';
+  const hasGrace = R.gracePeriod > 0;
+  const hdr = ['회차','납입일','납입금액(원)','원금(원)',
+    isSimple?'귀속이자(원)':'이자(원)',
+    isSimple?'납입원금누적(원)':'잔액(원)',
+    hasGrace?'구분':''].filter(h=>h);
+  const rows = R.schedule.map(r => [
+    r.no, r.date||'', Math.round(r.payment), Math.round(r.principal),
+    Math.round(r.interest), Math.round(r.balance),
+    hasGrace ? (r.isGrace?'거치':'상환') : ''
+  ].filter((_,i) => !(i===6 && !hasGrace)));
+
+  const csv  = '\uFEFF' + [hdr,...rows].map(r=>r.join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement('a'),{ href:url, download:`이자계산기_${R.type==='savings'?'적금':'대출'}.csv` });
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+/* ============================================================
+   초기화
+============================================================ */
+function resetAll() {
+  [['principal','100000'],['monthly','10000']].forEach(([id,v])=>{
+    qs('#'+id).value = fmtNum(+v);
+    const sl=qs('#'+id+'Slider'); if(sl)sl.value=+v;
+  });
+  qs('#principalDisplay').textContent = wonLabel(100000);
+  qs('#monthlyDisplay').textContent   = wonLabel(10000);
+  qs('#rate').value='0.1'; qs('#rateSlider').value=0.1;
+  qs('#term').value='1';   qs('#termSlider').value=1;
+  qs('#termType').value='months';
+  qs('#compoundFreq').value='12';
+  qs('#repayType').value='equal_payment';
+  qs('#gracePeriod').value='0'; qs('#graceSlider').value=0;
+  qs('#graceDisplay').textContent='0개월';
+  qs('#prepayFeeRate').value='0'; qs('#prepayFeeAmt').value='';
+  qs('#startDate').value=new Date().toISOString().slice(0,10);
+  qs('input[name="taxView"][value="before"]').checked=true;
+  state.showAll=false;
+  setTaxType('normal');
+  setProductType('savings');
+  setInterestType('simple');
+}
+</script>
+</body>
+</html>
