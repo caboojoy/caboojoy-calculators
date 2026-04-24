@@ -31,6 +31,9 @@ body {
   color: var(--t1);
   font-family: 'Noto Sans KR', sans-serif;
   font-weight: 400;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
   min-height: 100vh;
   padding: 32px 16px 100px;
   background-image:
@@ -246,6 +249,67 @@ input.error { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(224, 92, 1
   color: var(--accent);
   background: rgba(58, 159, 214, .08);
   border-color: rgba(58, 159, 214, .25);
+}
+
+/* ============================================================
+  모바일 가독성 보정
+============================================================ */
+@media (max-width: 640px) {
+  .card-title {
+    font-size: 13px;
+    letter-spacing: .08em;
+  }
+
+  label {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: .01em;
+    line-height: 1.4;
+  }
+
+  .toggle-group label {
+    font-size: 14px;
+    font-weight: 600;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .meal-tab {
+    font-size: 14px;
+    font-weight: 600;
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .daily-summary .ds-left {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .dm-label {
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .cat-btn {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .data-source-badge {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .meal-subtotal .ms-label {
+    font-size: 13px;
+    letter-spacing: .03em;
+  }
 }
 
 /* ============================================================
