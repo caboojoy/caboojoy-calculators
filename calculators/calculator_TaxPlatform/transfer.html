@@ -84,7 +84,7 @@
     <div class="field">
       <label>양도소득기본공제</label>
       <input type="text" value="2,500,000" disabled style="opacity:0.5">
-      <div class="field-hint">연 250만원 고정 적용</div>
+      <div class="field-hint">연 기본공제 고정 적용</div>
     </div>
   </div>
 
@@ -106,15 +106,10 @@
 <div class="toast" id="toast"></div>
 <script src="shared.js"></script>
 <script>
-  const ASSET_RATES = {
-    house1: { rate: null, note: '기본세율 (장기보유특별공제 최대 80%)' },
-    house2: { rate: null, note: '기본세율 + 10%p 중과' },
-    house3: { rate: null, note: '기본세율 + 20%p 중과' },
-    land:   { rate: null, note: '기본세율' },
-    stock_listed:   { rate: 0.20, note: '20% (대주주) / 소액주주 비과세' },
-    stock_unlisted: { rate: 0.20, note: '20%' },
-    shortterm: { rate: 0.50, note: '50% (보유 1년 미만 주택)' },
-  };
+  const ASSET_RATES = TAX_RULES.transfer.assetRates;
+  const TRANSFER_BASIC_DEDUCTION = TAX_RULES.deductions.transferBasic;
+  const HOUSE2_SURCHARGE = TAX_RULES.transfer.house2Surcharge;
+  const HOUSE3_SURCHARGE = TAX_RULES.transfer.house3Surcharge;
 
   ['salePrice','buyPrice','expenses'].forEach(id => addCommaInput(document.getElementById(id)));
 
@@ -180,7 +175,7 @@
     const transferIncome = gain - ltcDeduction;
 
     // 양도소득기본공제
-    const basicDeduction = 2_500_000;
+    const basicDeduction = TRANSFER_BASIC_DEDUCTION;
 
     // 과세표준
     const taxBase = Math.max(0, transferIncome - basicDeduction);
@@ -199,7 +194,7 @@
       calculatedTax = TaxEngine.progressiveTax(taxBase);
       taxRateLabel  = TaxEngine.bracketLabel(taxBase);
       // 다주택 중과
-      const surcharge = type === 'house2' ? 0.10 : type === 'house3' ? 0.20 : 0;
+      const surcharge = type === 'house2' ? HOUSE2_SURCHARGE : type === 'house3' ? HOUSE3_SURCHARGE : 0;
       if (surcharge > 0) {
         calculatedTax += Math.floor(taxBase * surcharge);
         taxRateLabel  += `+${(surcharge*100).toFixed(0)}%p 중과`;

@@ -39,7 +39,7 @@
   </div>
 
   <div class="card">
-    <div class="card-title">사적연금 (1,500만원 기준)</div>
+    <div class="card-title" id="privatePensionTitle">사적연금</div>
 
     <div class="field">
       <label>연금저축 수령액 (연간)</label>
@@ -52,10 +52,10 @@
     <div class="field">
       <label>사적연금 과세 방식</label>
       <div class="toggle-group">
-        <button class="toggle-btn active" data-tax="sep">분리과세 (3~5%, 단순)</button>
-        <button class="toggle-btn"        data-tax="comp">종합과세 (1,500만원 초과 시)</button>
+        <button class="toggle-btn active" data-tax="sep" id="privateSepBtn">분리과세</button>
+        <button class="toggle-btn"        data-tax="comp" id="privateCompBtn">종합과세</button>
       </div>
-      <div class="field-hint">1,500만원 이하이면 분리과세 선택 가능 (3~5% 저율 과세)</div>
+      <div class="field-hint" id="privatePensionHint"></div>
     </div>
   </div>
 
@@ -95,7 +95,17 @@
 <div class="toast" id="toast"></div>
 <script src="shared.js"></script>
 <script>
-  const PRIVATE_THRESHOLD = 15_000_000;
+  const PRIVATE_THRESHOLD = TAX_RULES.thresholds.privatePension;
+  const PRIVATE_SEP_RATE = TAX_RULES.rates.privatePensionSeparate;
+  const PERSONAL_PER_PERSON = TAX_RULES.deductions.personalPerPerson;
+  const privateThresholdText = Fmt.eok(PRIVATE_THRESHOLD);
+
+  document.getElementById('privatePensionTitle').textContent = `사적연금 (${privateThresholdText} 기준)`;
+  document.getElementById('privateSepBtn').textContent = `분리과세 (${(PRIVATE_SEP_RATE * 100).toFixed(0)}%, 단순)`;
+  document.getElementById('privateCompBtn').textContent = `종합과세 (${privateThresholdText} 초과 시)`;
+  document.getElementById('privatePensionHint').textContent =
+    `${privateThresholdText} 이하이면 분리과세 선택 가능 (연령구간 3~5% 저율 과세)`;
+
   let privateTaxMode = 'sep';
   let lastResult = null;
 
@@ -115,7 +125,7 @@
     const pub      = Fmt.parse(document.getElementById('publicPension').value);
     const annuity  = Fmt.parse(document.getElementById('annuitySavings').value);
     const irp      = Fmt.parse(document.getElementById('irp').value);
-    const personalDed = Fmt.parse(document.getElementById('personalDed').value) || 1_500_000;
+    const personalDed = Fmt.parse(document.getElementById('personalDed').value) || PERSONAL_PER_PERSON;
     const otherDed    = Fmt.parse(document.getElementById('otherDed').value);
 
     const publicTotal  = national + pub;
@@ -134,7 +144,7 @@
 
     if (privateTaxMode === 'sep' && privateTotal <= PRIVATE_THRESHOLD) {
       // 분리과세: 나이에 따라 3~5% (여기서는 4%로 단순화)
-      privateTax   = Math.floor(privateTotal * 0.04);
+      privateTax   = Math.floor(privateTotal * PRIVATE_SEP_RATE);
       privateForComp = 0;
     } else {
       // 종합과세 합산
@@ -160,7 +170,7 @@
       ['공적연금 소득금액',        Fmt.won(pubIncome), true],
       ['사적연금 총액',           Fmt.won(privateTotal)],
       privateTaxMode === 'sep' && privateTotal <= PRIVATE_THRESHOLD
-        ? ['사적연금 분리과세 (4%)', Fmt.won(privateTax)]
+        ? [`사적연금 분리과세 (${(PRIVATE_SEP_RATE * 100).toFixed(0)}%)`, Fmt.won(privateTax)]
         : ['사적연금 종합과세 합산', Fmt.won(privateForComp)],
       ['종합과세 합산 소득금액',   Fmt.won(comprehensiveIncome), true],
       ['소득공제 합계',           `-${Fmt.won(totalDed)}`],
@@ -183,7 +193,7 @@
       </div>`;
 
     document.getElementById('resultNote').textContent =
-      '※ 사적연금 분리과세율은 수령 나이에 따라 3%(70세 이상)~5%(55세 이상 70세 미만)로 달라집니다.';
+      `※ 사적연금 분리과세율은 수령 나이에 따라 3%(70세 이상)~5%(55세 이상 70세 미만)로 달라집니다. 본 계산 기본값은 ${(PRIVATE_SEP_RATE * 100).toFixed(0)}%입니다.`;
 
     const isComp = publicTotal > 0 || (privateTaxMode === 'comp' || privateTotal > PRIVATE_THRESHOLD);
 

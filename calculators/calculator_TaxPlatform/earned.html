@@ -24,7 +24,7 @@
       <div class="icon">💼</div>
       <div>
         <h1>근로소득 계산기</h1>
-        <div class="subtitle">연간 총급여 기준 · 2024년 소득세법</div>
+        <div class="subtitle" id="earnedYearText">연간 총급여 기준</div>
       </div>
     </div>
   </div>
@@ -60,7 +60,7 @@
         <label>배우자 공제</label>
         <div class="toggle-group">
           <button class="toggle-btn active" data-group="spouse" data-val="0">없음</button>
-          <button class="toggle-btn"        data-group="spouse" data-val="1">있음 (+150만)</button>
+          <button class="toggle-btn"        data-group="spouse" data-val="1" id="spouseDedLabel">있음</button>
         </div>
       </div>
       <div class="field">
@@ -104,9 +104,14 @@
 
 <script src="shared.js"></script>
 <script>
+  const PERSONAL_PER_PERSON = TAX_RULES.deductions.personalPerPerson;
+
   // ── 상태 ──
   const state = { spouseVal: 0, extras: new Set() };
   let lastResult = null;
+
+  document.getElementById('earnedYearText').textContent = `연간 총급여 기준 · ${TAX_RULES.meta.label}`;
+  document.getElementById('spouseDedLabel').textContent = `있음 (+${Fmt.eok(PERSONAL_PER_PERSON)})`;
 
   // ── 입력 자동 콤마 ──
   ['wage','nontax','insurance'].forEach(id => addCommaInput(document.getElementById(id)));
@@ -155,13 +160,13 @@
     const earnedIncome = taxableWage - earnedDed;
 
     // 4. 인적공제
-    const spouseAmt = state.spouseVal * 1_500_000;
+    const spouseAmt = state.spouseVal * PERSONAL_PER_PERSON;
     let extraAmt = 0;
     if (state.extras.has('경로우대')) extraAmt += 1_000_000;
     if (state.extras.has('장애인'))   extraAmt += 2_000_000;
     if (state.extras.has('한부모'))   extraAmt += 1_000_000;
 
-    const personalDed = 1_500_000 + spouseAmt + deps * 1_500_000 + extraAmt;
+    const personalDed = PERSONAL_PER_PERSON + spouseAmt + deps * PERSONAL_PER_PERSON + extraAmt;
 
     // 5. 근로소득 특별소득공제 (4대보험)
     const specialDed = insurance;

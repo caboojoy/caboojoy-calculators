@@ -81,7 +81,7 @@
     <div class="card-title">소득공제 (선택)</div>
     <div class="field">
       <label>노란우산공제 불입액</label>
-      <input type="text" id="yellowUmbrella" placeholder="최대 500만원 (사업규모별)" inputmode="numeric">
+      <input type="text" id="yellowUmbrella" placeholder="최대 한도 (사업규모별)" inputmode="numeric">
     </div>
     <div class="field">
       <label>인적공제 (연간, 본인+부양가족)</label>
@@ -111,10 +111,9 @@
 <div class="toast" id="toast"></div>
 <script src="shared.js"></script>
 <script>
-  const BIZ_RATES = {
-    service: 64.1, retail: 90.3, food: 75.2,
-    manufacture: 85.0, freelance: 64.1, direct: null
-  };
+  const BIZ_RATES = TAX_RULES.businessRates;
+  const PERSONAL_PER_PERSON = TAX_RULES.deductions.personalPerPerson;
+  const YELLOW_UMBRELLA_MAX = TAX_RULES.deductions.businessYellowUmbrellaMax;
 
   const METHOD_INFO = {
     simple:   '수입금액 × 단순경비율 = 필요경비. 소규모 사업자에게 유리.',
@@ -148,15 +147,17 @@
     });
   });
 
-  // 초기 경비율 설정
-  document.getElementById('expenseRate').value = 64.1;
+  // 초기 경비율/가이드 설정
+  document.getElementById('expenseRate').value = BIZ_RATES.service;
+  document.getElementById('yellowUmbrella').placeholder = `최대 ${Fmt.eok(YELLOW_UMBRELLA_MAX)} (사업규모별)`;
+  document.getElementById('personalDed').placeholder = `예) ${PERSONAL_PER_PERSON.toLocaleString('ko-KR')}`;
 
   function calculate() {
     const revenue    = Fmt.parse(document.getElementById('revenue').value);
     const rate       = parseFloat(document.getElementById('expenseRate').value) / 100;
     const actualExp  = Fmt.parse(document.getElementById('actualExpense').value);
     const yellowDed  = Fmt.parse(document.getElementById('yellowUmbrella').value);
-    const personalDed= Fmt.parse(document.getElementById('personalDed').value) || 1_500_000;
+    const personalDed= Fmt.parse(document.getElementById('personalDed').value) || PERSONAL_PER_PERSON;
 
     if (!revenue) { alert('연간 수입금액을 입력해주세요.'); return; }
 
@@ -174,7 +175,8 @@
     const expenseRate    = revenue > 0 ? expense / revenue : 0;
 
     // 소득공제
-    const totalDed = Math.min(yellowDed, 5_000_000) + personalDed;
+    const yellowDedApplied = Math.min(yellowDed, YELLOW_UMBRELLA_MAX);
+    const totalDed = yellowDedApplied + personalDed;
 
     // 과세표준
     const taxBase = Math.max(0, businessIncome - totalDed);
@@ -187,7 +189,7 @@
       ['연간 수입금액',        Fmt.won(revenue)],
       [`필요경비 (${(expenseRate*100).toFixed(1)}%)`, `-${Fmt.won(expense)}`],
       ['사업소득금액',         Fmt.won(businessIncome), true],
-      ['노란우산공제',         `-${Fmt.won(Math.min(yellowDed, 5_000_000))}`],
+      ['노란우산공제',         `-${Fmt.won(yellowDedApplied)}`],
       ['인적공제',             `-${Fmt.won(personalDed)}`],
       ['과세표준',             Fmt.won(taxBase), true],
       [`산출세액 (${TaxEngine.bracketLabel(taxBase)})`, Fmt.won(calculatedTax)],

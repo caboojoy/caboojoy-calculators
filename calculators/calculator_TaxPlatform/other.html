@@ -20,7 +20,7 @@
       <div class="icon">📋</div>
       <div>
         <h1>기타소득 계산기</h1>
-        <div class="subtitle">강연료·원고료·상금 등 · 300만원 기준</div>
+        <div class="subtitle" id="otherSubtitle">강연료·원고료·상금 등</div>
       </div>
     </div>
   </div>
@@ -61,11 +61,11 @@
     <div class="card-title">과세 방식 선택</div>
     <div class="field">
       <div class="toggle-group">
-        <button class="toggle-btn active" data-tax="auto">자동 판단 (300만원 기준)</button>
+        <button class="toggle-btn active" data-tax="auto" id="otherAutoTaxBtn">자동 판단</button>
         <button class="toggle-btn"        data-tax="sep">분리과세 선택</button>
         <button class="toggle-btn"        data-tax="comp">종합과세 선택</button>
       </div>
-      <div class="field-hint">기타소득금액 300만원 이하: 분리과세(22%) 또는 종합과세 중 선택 가능</div>
+      <div class="field-hint" id="otherTaxHint"></div>
     </div>
   </div>
 
@@ -91,11 +91,18 @@
 <div class="toast" id="toast"></div>
 <script src="shared.js"></script>
 <script>
-  const THRESHOLD       = 3_000_000;
+  const THRESHOLD       = TAX_RULES.thresholds.other;
   const OTHER_EXPENSE   = { lecture:60, manuscript:60, prize:80, lottery:0, royalty:60, misc:60 };
-  const SEPARATE_RATE   = 0.22;   // 분리과세 원천징수율 (소득세 20% + 지방 2%)
-  const LOTTERY_RATE_LO = 0.22;   // 복권 3억 이하
-  const LOTTERY_RATE_HI = 0.33;   // 복권 3억 초과분
+  const SEPARATE_RATE   = TAX_RULES.rates.otherSeparate; // 분리과세 원천징수율
+  const LOTTERY_RATE_LO = TAX_RULES.rates.lotteryLow;    // 복권 3억 이하
+  const LOTTERY_RATE_HI = TAX_RULES.rates.lotteryHigh;   // 복권 3억 초과분
+  const PERSONAL_PER_PERSON = TAX_RULES.deductions.personalPerPerson;
+  const thresholdText = Fmt.eok(THRESHOLD);
+
+  document.getElementById('otherSubtitle').textContent = `강연료·원고료·상금 등 · ${thresholdText} 기준`;
+  document.getElementById('otherAutoTaxBtn').textContent = `자동 판단 (${thresholdText} 기준)`;
+  document.getElementById('otherTaxHint').textContent =
+    `기타소득금액 ${thresholdText} 이하: 분리과세(${(SEPARATE_RATE * 100).toFixed(0)}%) 또는 종합과세 중 선택 가능`;
 
   let taxMode = 'auto';
   let lastResult = null;
@@ -151,7 +158,7 @@
       note = '분리과세(22%) 원천징수로 납세 완료. 종합소득세 합산 불필요.';
     } else {
       // 종합과세 (단독 계산 — 실제는 다른 소득과 합산 필요)
-      const taxBase = Math.max(0, otherIncome - 1_500_000); // 기본공제 150만원 (단순)
+      const taxBase = Math.max(0, otherIncome - PERSONAL_PER_PERSON); // 기본공제 (단순)
       tax  = TaxEngine.progressiveTax(taxBase);
       note = '종합과세 선택 시 다른 소득과 합산 과세됩니다. 종합소득세 계산기를 이용하세요.';
     }

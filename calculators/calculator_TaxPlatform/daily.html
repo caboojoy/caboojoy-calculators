@@ -60,9 +60,9 @@
     </div>
 
     <div class="field">
-      <label>일용직 근로소득공제 (일 15만원)</label>
-      <input type="text" id="dedPerDay" value="150,000" inputmode="numeric">
-      <div class="field-hint">기본값 150,000원. 변경 시 직접 입력</div>
+      <label id="dailyDedLabel">일용직 근로소득공제</label>
+      <input type="text" id="dedPerDay" inputmode="numeric">
+      <div class="field-hint" id="dailyDedHint"></div>
     </div>
   </div>
 
@@ -71,7 +71,7 @@
   <div class="result-card" id="resultCard">
     <div class="card-title">계산 결과</div>
     <div id="resultRows"></div>
-    <div class="result-note">※ 일용직 근로소득세율 6% 적용. 분리과세이므로 종합소득세 합산 없음.</div>
+    <div class="result-note" id="dailyResultNote"></div>
   </div>
 
   <div class="action-row" id="actionRow" style="display:none">
@@ -89,6 +89,16 @@
 <div class="toast" id="toast"></div>
 <script src="shared.js"></script>
 <script>
+  const DAILY_DED_PER_DAY = TAX_RULES.deductions.dailyPerDay;
+  const DAILY_TAX_RATE = TAX_RULES.rates.dailyIncomeTax;
+  const DAILY_CREDIT_RATE = TAX_RULES.rates.dailyEarnedCredit;
+  const LOCAL_TAX_RATE = TAX_RULES.rates.localTax;
+
+  document.getElementById('dedPerDay').value = DAILY_DED_PER_DAY.toLocaleString('ko-KR');
+  document.getElementById('dailyDedLabel').textContent = `일용직 근로소득공제 (일 ${Fmt.eok(DAILY_DED_PER_DAY)})`;
+  document.getElementById('dailyDedHint').textContent = `기본값 ${Fmt.won(DAILY_DED_PER_DAY)}. 변경 시 직접 입력`;
+  document.getElementById('dailyResultNote').textContent = `※ 일용직 근로소득세율 ${(DAILY_TAX_RATE * 100).toFixed(0)}% 적용. 분리과세이므로 종합소득세 합산 없음.`;
+
   ['daily','days','dedPerDay'].forEach(id => addCommaInput(document.getElementById(id)));
 
   let lastResult = null;
@@ -96,7 +106,7 @@
   function calculate() {
     const dailyWage = Fmt.parse(document.getElementById('daily').value);
     const days      = Fmt.parse(document.getElementById('days').value);
-    const dedPerDay = Fmt.parse(document.getElementById('dedPerDay').value) || 150_000;
+    const dedPerDay = Fmt.parse(document.getElementById('dedPerDay').value) || DAILY_DED_PER_DAY;
 
     if (!dailyWage || !days) { alert('일당과 근무일수를 입력해주세요.'); return; }
 
@@ -104,11 +114,11 @@
 
     // 1일 단위로 계산 (일용직 세법 구조)
     const taxablePerDay  = Math.max(0, dailyWage - dedPerDay);
-    const taxPerDay      = Math.floor(taxablePerDay * 0.06);          // 세율 6%
-    const creditPerDay   = Math.floor(taxPerDay * 0.55);              // 근로소득세액공제 55%
+    const taxPerDay      = Math.floor(taxablePerDay * DAILY_TAX_RATE);   // 세율
+    const creditPerDay   = Math.floor(taxPerDay * DAILY_CREDIT_RATE);    // 근로소득세액공제
     const finalTaxPerDay = Math.max(0, taxPerDay - creditPerDay);
     const totalTax       = finalTaxPerDay * days;
-    const localTax       = Math.floor(totalTax * 0.1);
+    const localTax       = Math.floor(totalTax * LOCAL_TAX_RATE);
     const totalWithLocal = totalTax + localTax;
 
     const taxableTotal = taxablePerDay * days;
@@ -119,10 +129,10 @@
       ['총 수입금액',       Fmt.won(totalIncome), true],
       ['일용직 근로소득공제 (일 × 일수)', `-${Fmt.won(dedPerDay * days)}`],
       ['과세대상 급여',     Fmt.won(taxableTotal), true],
-      ['산출세액 (6%)',     Fmt.won(taxPerDay * days)],
-      ['근로소득세액공제 (55%)', `-${Fmt.won(creditPerDay * days)}`],
+      [`산출세액 (${(DAILY_TAX_RATE * 100).toFixed(0)}%)`,     Fmt.won(taxPerDay * days)],
+      [`근로소득세액공제 (${(DAILY_CREDIT_RATE * 100).toFixed(0)}%)`, `-${Fmt.won(creditPerDay * days)}`],
       ['원천징수세액 (소득세)', Fmt.won(totalTax)],
-      ['지방소득세 (10%)', Fmt.won(localTax)],
+      [`지방소득세 (${(LOCAL_TAX_RATE * 100).toFixed(0)}%)`, Fmt.won(localTax)],
     ];
 
     document.getElementById('resultRows').innerHTML =

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>소득세 계산 플랫폼</title>
+  <title>소득세 계산기 플랫폼</title>
   <link rel="stylesheet" href="style.css">
   <style>
     body { background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(59,130,246,0.08) 0%, var(--bg) 65%); }
@@ -23,6 +23,135 @@
     .stat-item .num { font-size: 1.5rem; font-weight: 700; color: var(--text); }
     .stat-item .lbl { font-size: 0.75rem; color: var(--text-3); margin-top: 2px; }
     .stat-item .num.green { color: #10B981; }
+
+    .progress-card {
+      margin-top: 18px;
+      text-align: left;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,0.02);
+      padding: 12px 14px;
+    }
+    .progress-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78rem;
+      color: var(--text-2);
+      margin-bottom: 8px;
+    }
+    .progress-bar {
+      height: 8px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.06);
+    }
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #3B82F6, #10B981);
+      transition: width 0.25s ease;
+    }
+
+    .hub-toolbar {
+      margin: 14px 0 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .tool-group { display: flex; gap: 8px; }
+    .tool-btn {
+      border: 1px solid var(--border-hi);
+      background: var(--surface);
+      color: var(--text-2);
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 0.77rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tool-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .tool-btn.primary {
+      background: color-mix(in srgb, var(--accent) 20%, transparent);
+      border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+      color: #93c5fd;
+      font-weight: 600;
+    }
+
+    .filter-row {
+      margin-bottom: 12px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .filter-chip {
+      border: 1px solid var(--border-hi);
+      background: transparent;
+      color: var(--text-2);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .filter-chip.active {
+      background: color-mix(in srgb, var(--accent) 18%, transparent);
+      border-color: var(--accent);
+      color: #93c5fd;
+      font-weight: 600;
+    }
+
+    .hub-card .meta-row {
+      margin-top: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.7rem;
+      color: var(--text-3);
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      border: 1px solid var(--border-hi);
+    }
+    .status-pill.saved {
+      background: color-mix(in srgb, var(--success) 12%, transparent);
+      color: #86efac;
+      border-color: color-mix(in srgb, var(--success) 40%, transparent);
+    }
+    .status-pill.pending {
+      background: rgba(255,255,255,0.03);
+      color: var(--text-3);
+    }
+    .saved-time { color: var(--text-3); font-size: 0.68rem; margin-top: 6px; }
+
+    .empty-hint {
+      border: 1px dashed var(--border-hi);
+      border-radius: var(--radius);
+      padding: 24px 18px;
+      text-align: center;
+      color: var(--text-3);
+      font-size: 0.83rem;
+      margin-bottom: 12px;
+    }
+
+    .inline-msg {
+      display: none;
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      border: 1px solid color-mix(in srgb, #10B981 30%, transparent);
+      background: color-mix(in srgb, #10B981 8%, transparent);
+      color: #6ee7b7;
+    }
+    .inline-msg.visible { display: block; }
 
     .section-label {
       font-size: 0.78rem;
@@ -53,15 +182,21 @@
       border-top: 1px solid var(--border);
       margin-top: 40px;
     }
+
+    @media (max-width: 640px) {
+      .stat-row { gap: 18px; }
+      .tool-group { width: 100%; }
+      .tool-btn { flex: 1; }
+    }
   </style>
 </head>
 <body>
 <div class="page-wrap wide">
 
   <div class="hub-hero">
-    <h1>세무 계산 <span>플랫폼</span></h1>
-    <p>2024년 세법 기준 · 소득별 계산 후 종합소득세 자동 합산</p>
-    <span class="year-badge">2024년 소득세법</span>
+    <h1>소득세 계산기 <span>플랫폼</span></h1>
+    <p id="yearSummaryText">세법 기준 · 소득별 계산 후 종합소득세 자동 합산</p>
+    <span class="year-badge" id="yearBadge"></span>
 
     <div class="stat-row" id="statRow">
       <div class="stat-item">
@@ -77,18 +212,42 @@
         <div class="lbl">추정 세액 합계</div>
       </div>
     </div>
+
+    <div class="progress-card">
+      <div class="progress-top">
+        <span>입력 진행률</span>
+        <span id="progressText">0 / 7 완료</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
   </div>
 
-  <div class="section-label">개별 소득 계산기</div>
+  <div class="hub-toolbar">
+    <div class="section-label" style="margin:0">개별 소득 계산기</div>
+    <div class="tool-group">
+      <button class="tool-btn primary" id="goComprehensiveBtn">종합소득세 계산으로 이동</button>
+      <button class="tool-btn" id="clearAllBtn">저장 데이터 초기화</button>
+    </div>
+  </div>
+
+  <div class="filter-row">
+    <button class="filter-chip active" data-filter="all">전체</button>
+    <button class="filter-chip" data-filter="saved">저장됨</button>
+    <button class="filter-chip" data-filter="pending">미완료</button>
+  </div>
 
   <div class="hub-grid" id="hubGrid">
     <!-- JS로 렌더 -->
   </div>
 
+  <div class="inline-msg" id="inlineMsg"></div>
+
   <a href="comprehensive.html" class="comprehensive-link">
     <div class="left">
       <div class="title">📊 종합소득세 계산기</div>
-      <div class="sub">모든 소득을 불러와 누진세율로 최종 세액 산출</div>
+      <div class="sub">저장된 소득 데이터를 합산해 최종 종합소득세를 계산합니다</div>
     </div>
     <div class="arrow">→</div>
   </a>
@@ -104,29 +263,104 @@
     { type: 'earned',    desc: '급여·상여·연간 총급여' },
     { type: 'daily',     desc: '일당 × 근무일수 (분리과세)' },
     { type: 'business',  desc: '수입금액 - 필요경비' },
-    { type: 'financial', desc: '이자·배당 (2천만원 기준)' },
+    { type: 'financial', desc: `이자·배당 (${Fmt.eok(TAX_RULES.thresholds.financial)} 기준)` },
     { type: 'transfer',  desc: '양도차익 - 장기공제 (분리과세)' },
     { type: 'pension',   desc: '공적·사적 연금소득' },
     { type: 'other',     desc: '강연료·원고료·상금 등' },
   ];
+  const TOTAL_CARD_COUNT = CARDS.length;
+  let currentFilter = 'all';
+
+  function formatSavedTime(savedAt) {
+    if (!savedAt) return '';
+    const d = new Date(savedAt);
+    if (Number.isNaN(d.getTime())) return '';
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mi = String(d.getMinutes()).padStart(2, '0');
+    return `${mm}.${dd} ${hh}:${mi} 저장`;
+  }
+
+  function showInlineMsg(msg) {
+    const box = document.getElementById('inlineMsg');
+    box.textContent = msg;
+    box.classList.add('visible');
+    setTimeout(() => box.classList.remove('visible'), 2200);
+  }
+
+  function applyFilter(cards, allData) {
+    if (currentFilter === 'saved') {
+      return cards.filter(({ type }) => Boolean(allData[type]));
+    }
+    if (currentFilter === 'pending') {
+      return cards.filter(({ type }) => !allData[type]);
+    }
+    return cards;
+  }
+
+  function bindUIEvents() {
+    document.querySelectorAll('[data-filter]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentFilter = btn.dataset.filter;
+        document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        render();
+      });
+    });
+
+    document.getElementById('goComprehensiveBtn').addEventListener('click', () => {
+      location.href = 'comprehensive.html';
+    });
+
+    document.getElementById('clearAllBtn').addEventListener('click', () => {
+      const ok = confirm('저장된 소득 데이터를 모두 삭제할까요?');
+      if (!ok) return;
+      TaxStorage.clearAll();
+      render();
+      showInlineMsg('저장 데이터를 초기화했습니다.');
+    });
+  }
+
+  function renderTaxYear() {
+    document.getElementById('yearSummaryText').textContent =
+      `${TAX_RULES.meta.label} 기준 · 소득별 계산 후 종합소득세 자동 합산`;
+    document.getElementById('yearBadge').textContent = TAX_RULES.meta.label;
+  }
 
   function render() {
     const all = TaxStorage.getAll();
     const grid = document.getElementById('hubGrid');
-    grid.innerHTML = CARDS.map(({ type, desc }) => {
+    const sortedCards = [...CARDS].sort((a, b) => {
+      const aSaved = all[a.type] ? 1 : 0;
+      const bSaved = all[b.type] ? 1 : 0;
+      return bSaved - aSaved;
+    });
+    const filteredCards = applyFilter(sortedCards, all);
+
+    if (!filteredCards.length) {
+      grid.innerHTML = `<div class="empty-hint">선택한 조건에 맞는 계산기가 없습니다.<br>필터를 바꾸거나 데이터를 저장해보세요.</div>`;
+    } else {
+      grid.innerHTML = filteredCards.map(({ type, desc }) => {
       const meta = INCOME_TYPES[type];
       const saved = all[type];
-      const savedHtml = saved
-        ? `<span class="saved-badge">✓ 저장됨</span>`
-        : '';
+      const statusClass = saved ? 'saved' : 'pending';
+      const statusText = saved ? '저장됨' : '미완료';
+      const taxText = saved ? Fmt.eok(saved.tax || 0) : '—';
+      const savedTime = saved ? `<div class="saved-time">${formatSavedTime(saved.savedAt)}</div>` : '';
       return `
         <a href="${meta.file}" class="hub-card" style="--card-accent:${meta.color}">
           <span class="emoji">${meta.emoji}</span>
           <span class="name">${meta.label}</span>
           <span class="desc">${desc}</span>
-          ${savedHtml}
+          <div class="meta-row">
+            <span class="status-pill ${statusClass}">${saved ? '✓' : '•'} ${statusText}</span>
+            <span>예상세액 ${taxText}</span>
+          </div>
+          ${savedTime}
         </a>`;
-    }).join('');
+      }).join('');
+    }
 
     // 통계 업데이트
     const types = Object.keys(all);
@@ -142,8 +376,14 @@
       types.length ? Fmt.eok(totalIncome) : '—';
     document.getElementById('totalTax').textContent =
       types.length ? Fmt.eok(totalTax) : '—';
+
+    const progress = Math.round((types.length / TOTAL_CARD_COUNT) * 100);
+    document.getElementById('progressText').textContent = `${types.length} / ${TOTAL_CARD_COUNT} 완료`;
+    document.getElementById('progressFill').style.width = `${progress}%`;
   }
 
+  renderTaxYear();
+  bindUIEvents();
   render();
   window.addEventListener('taxDataUpdated', render);
   window.addEventListener('storage', render);

@@ -177,13 +177,13 @@
     <div class="deduction-grid">
       <div class="field">
         <label>기본공제 (본인)</label>
-        <input type="text" value="1,500,000" disabled style="opacity:0.5">
+        <input type="text" id="selfDedInput" disabled style="opacity:0.5">
       </div>
       <div class="field">
         <label>배우자 공제</label>
         <div class="toggle-group">
           <button class="toggle-btn active" data-ded="spouse" data-val="0">없음</button>
-          <button class="toggle-btn"        data-ded="spouse" data-val="1500000">+150만</button>
+          <button class="toggle-btn"        data-ded="spouse" data-val="0" id="spouseDedBtn">+공제</button>
         </div>
       </div>
       <div class="field">
@@ -246,8 +246,16 @@
 <div class="toast" id="toast"></div>
 <script src="shared.js"></script>
 <script>
+  const PERSONAL_PER_PERSON = TAX_RULES.deductions.personalPerPerson;
+  const LOCAL_TAX_RATE = TAX_RULES.rates.localTax;
+  const CHILD_CREDIT = TAX_RULES.credits.child;
+
   let loadedIncomes = {};
   let deductions = { spouse: 0 };
+
+  document.getElementById('selfDedInput').value = PERSONAL_PER_PERSON.toLocaleString('ko-KR');
+  document.getElementById('spouseDedBtn').dataset.val = String(PERSONAL_PER_PERSON);
+  document.getElementById('spouseDedBtn').textContent = `+${Fmt.eok(PERSONAL_PER_PERSON)}`;
 
   // ── 소득 불러오기 ──
   function loadAll() {
@@ -353,9 +361,9 @@
 
     // 2. 소득공제 합산
     const deps           = Math.max(0, parseInt(document.getElementById('deps').value) || 0);
-    const selfDed        = 1_500_000;
+    const selfDed        = PERSONAL_PER_PERSON;
     const spouseDed      = deductions.spouse;
-    const depsDed        = deps * 1_500_000;
+    const depsDed        = deps * PERSONAL_PER_PERSON;
     const pensionPremium = Fmt.parse(document.getElementById('pensionPremium').value);
     const specialDed     = Fmt.parse(document.getElementById('specialDed').value);
     const otherDed       = Fmt.parse(document.getElementById('otherDed').value);
@@ -375,15 +383,15 @@
     const earnedWage    = earnedData?.details?.taxableWage || 0;
     const earnedCredit  = earnedData ? TaxEngine.earnedTaxCredit(calculatedTax, earnedWage) : 0;
 
-    // 자녀세액공제 (2024 세법: 1명 15만, 2명 35만, 3명~ +30만)
+    // 자녀세액공제 (규칙값 기반)
     const childCredit = deps === 0 ? 0
-      : deps === 1 ? 150_000
-      : deps === 2 ? 350_000
-      : 350_000 + (deps - 2) * 300_000;
+      : deps === 1 ? CHILD_CREDIT.first
+      : CHILD_CREDIT.first + CHILD_CREDIT.second
+      : CHILD_CREDIT.first + CHILD_CREDIT.second + (deps - 2) * CHILD_CREDIT.additionalAfterSecond;
 
     const totalCredit   = earnedCredit + childCredit;
     const finalTax      = Math.max(0, calculatedTax - totalCredit);
-    const localTax      = Math.floor(finalTax * 0.1);
+    const localTax      = Math.floor(finalTax * LOCAL_TAX_RATE);
     const grandTotal    = finalTax + localTax;
 
     // 기납부세액 (각 계산기에서 이미 원천징수된 금액)

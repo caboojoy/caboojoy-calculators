@@ -18,32 +18,93 @@
  * □ other.html    THRESHOLD   (기타소득 300만)
  * □ business.html BIZ_RATES   (업종별 경비율, 국세청 고시)
  *
- * Last updated: 2024-01-01
+ * Last updated: 2025-01-01
  */
 
 
 
 /**
- * shared.js — 세무 계산 플랫폼 공통 엔진 v1.0
- * 2024년 소득세법 기준
+ * shared.js — 소득세 계산기 플랫폼 공통 엔진 v1.0
+ * 2025년 소득세법 기준(검토용)
  * caboojoy-calculators / calculator_TaxPlatform
  */
 
 'use strict';
 
 // ════════════════════════════════════════════════
-// 1. 2024년 종합소득세 세율표 (누진공제 방식)
+// 1. 연도별 세법 규칙 (기준값 중앙화)
 // ════════════════════════════════════════════════
-const TAX_BRACKETS = [
-  { limit:    14_000_000, rate: 0.06, deduction:          0 },
-  { limit:    50_000_000, rate: 0.15, deduction:  1_260_000 },
-  { limit:    88_000_000, rate: 0.24, deduction:  5_760_000 },
-  { limit:   150_000_000, rate: 0.35, deduction: 15_440_000 },
-  { limit:   300_000_000, rate: 0.38, deduction: 19_940_000 },
-  { limit:   500_000_000, rate: 0.40, deduction: 25_940_000 },
-  { limit: 1_000_000_000, rate: 0.42, deduction: 35_940_000 },
-  { limit:      Infinity, rate: 0.45, deduction: 65_940_000 },
-];
+// NOTE:
+// 2025 수치는 현행 로직 기준으로 구성한 검토용 기본값입니다.
+// 실제 신고 전 반드시 최신 국세청/기획재정부 고시값으로 재검증하세요.
+const TAX_RULES_2025 = {
+  meta: {
+    year: 2025,
+    label: '2025년 소득세법 (검토용)'
+  },
+  taxBrackets: [
+    { limit:    14_000_000, rate: 0.06, deduction:          0 },
+    { limit:    50_000_000, rate: 0.15, deduction:  1_260_000 },
+    { limit:    88_000_000, rate: 0.24, deduction:  5_760_000 },
+    { limit:   150_000_000, rate: 0.35, deduction: 15_440_000 },
+    { limit:   300_000_000, rate: 0.38, deduction: 19_940_000 },
+    { limit:   500_000_000, rate: 0.40, deduction: 25_940_000 },
+    { limit: 1_000_000_000, rate: 0.42, deduction: 35_940_000 },
+    { limit:      Infinity, rate: 0.45, deduction: 65_940_000 },
+  ],
+  deductions: {
+    personalPerPerson: 1_500_000,
+    transferBasic: 2_500_000,
+    dailyPerDay: 150_000,
+    businessYellowUmbrellaMax: 5_000_000,
+  },
+  thresholds: {
+    financial: 20_000_000,
+    other: 3_000_000,
+    privatePension: 15_000_000,
+  },
+  rates: {
+    localTax: 0.10,
+    dailyIncomeTax: 0.06,
+    dailyEarnedCredit: 0.55,
+    financialSeparate: 0.154,
+    otherSeparate: 0.22,
+    lotteryLow: 0.22,
+    lotteryHigh: 0.33,
+    privatePensionSeparate: 0.04,
+  },
+  businessRates: {
+    service: 64.1,
+    retail: 90.3,
+    food: 75.2,
+    manufacture: 85.0,
+    freelance: 64.1,
+    direct: null
+  },
+  transfer: {
+    assetRates: {
+      house1: { rate: null, note: '기본세율 (장기보유특별공제 최대 80%)' },
+      house2: { rate: null, note: '기본세율 + 10%p 중과' },
+      house3: { rate: null, note: '기본세율 + 20%p 중과' },
+      land:   { rate: null, note: '기본세율' },
+      stock_listed:   { rate: 0.20, note: '20% (대주주) / 소액주주 비과세' },
+      stock_unlisted: { rate: 0.20, note: '20%' },
+      shortterm:      { rate: 0.50, note: '50% (보유 1년 미만 주택)' },
+    },
+    house2Surcharge: 0.10,
+    house3Surcharge: 0.20,
+  },
+  credits: {
+    child: {
+      first: 150_000,
+      second: 200_000,
+      additionalAfterSecond: 300_000,
+    }
+  }
+};
+
+const TAX_RULES = TAX_RULES_2025;
+const TAX_BRACKETS = TAX_RULES.taxBrackets;
 
 // ════════════════════════════════════════════════
 // 2. 소득 유형 메타데이터
@@ -83,7 +144,7 @@ const TaxEngine = {
     return '45%';
   },
 
-  /** 근로소득공제 (2024) */
+  /** 근로소득공제 */
   earnedIncomeDeduction(wage) {
     if (wage <= 5_000_000)   return Math.floor(wage * 0.70);
     if (wage <= 15_000_000)  return Math.floor(3_500_000 + (wage - 5_000_000) * 0.40);
@@ -92,7 +153,7 @@ const TaxEngine = {
     return 14_750_000;
   },
 
-  /** 연금소득공제 (2024) */
+  /** 연금소득공제 */
   pensionIncomeDeduction(pension) {
     if (pension <= 3_500_000)  return pension;
     if (pension <= 7_000_000)  return Math.floor(3_500_000 + (pension - 3_500_000) * 0.40);
@@ -118,7 +179,7 @@ const TaxEngine = {
 
   /** 기본공제 계산 */
   personalDeduction(self = 1, spouse = 0, dependents = 0) {
-    return (self + spouse + dependents) * 1_500_000;
+    return (self + spouse + dependents) * TAX_RULES.deductions.personalPerPerson;
   },
 
   /** 장기보유특별공제율 (일반 부동산) */

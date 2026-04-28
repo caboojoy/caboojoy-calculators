@@ -39,7 +39,7 @@
       <div class="icon">💰</div>
       <div>
         <h1>금융소득 계산기</h1>
-        <div class="subtitle">이자·배당 · 2천만원 기준 종합과세 판단</div>
+        <div class="subtitle" id="financialSubtitle">이자·배당 · 기준금액 종합과세 판단</div>
       </div>
     </div>
   </div>
@@ -90,7 +90,10 @@
 <div class="toast" id="toast"></div>
 <script src="shared.js"></script>
 <script>
-  const THRESHOLD = 20_000_000;
+  const THRESHOLD = TAX_RULES.thresholds.financial;
+  const FINANCIAL_SEPARATE_RATE = TAX_RULES.rates.financialSeparate;
+  const thresholdText = Fmt.eok(THRESHOLD);
+  document.getElementById('financialSubtitle').textContent = `이자·배당 · ${thresholdText} 기준 종합과세 판단`;
   ['interest','dividend','withheld'].forEach(id => addCommaInput(document.getElementById(id)));
 
   let lastResult = null;
@@ -109,7 +112,7 @@
     // 분리과세분 (2천만원 이하 or 전부)
     const separatePart = isComprehensive ? THRESHOLD : total;
     // 분리과세 세율: 원천징수세율 14% + 지방소득세 1.4% = 15.4%
-    const separateTax  = Math.floor(separatePart * 0.154);
+    const separateTax  = Math.floor(separatePart * FINANCIAL_SEPARATE_RATE);
 
     // 종합과세분 (2천만원 초과분)
     // ※ 실제로는 다른 소득과 합산해야 하므로, 여기서는 단독 계산
@@ -131,7 +134,7 @@
           <div class="status">⚠️</div>
           <div class="info">
             <div class="title">종합과세 대상</div>
-            <div class="desc">금융소득 합계 ${Fmt.won(total)}가 2천만원을 초과합니다.<br>
+            <div class="desc">금융소득 합계 ${Fmt.won(total)}가 ${thresholdText}을 초과합니다.<br>
             초과분 ${Fmt.won(excess)}은 종합소득세에 합산됩니다.</div>
           </div>
         </div>`;
@@ -141,8 +144,8 @@
           <div class="status">✅</div>
           <div class="info">
             <div class="title">분리과세 (원천징수 완료)</div>
-            <div class="desc">금융소득 합계 ${Fmt.won(total)}가 2천만원 이하입니다.<br>
-            원천징수(15.4%)로 납세가 완료되어 종합소득세 합산 불필요.</div>
+            <div class="desc">금융소득 합계 ${Fmt.won(total)}가 ${thresholdText} 이하입니다.<br>
+            원천징수(${(FINANCIAL_SEPARATE_RATE * 100).toFixed(1)}%)로 납세가 완료되어 종합소득세 합산 불필요.</div>
           </div>
         </div>`;
     }
@@ -152,12 +155,12 @@
       ['이자소득',               Fmt.won(interest)],
       ['배당소득',               Fmt.won(dividend)],
       ['금융소득 합계',           Fmt.won(total), true],
-      ['2천만원 이하 (분리과세분)', Fmt.won(separatePart)],
-      ['분리과세 세액 (15.4%)',   Fmt.won(separateTax)],
+      [`${thresholdText} 이하 (분리과세분)`, Fmt.won(separatePart)],
+      [`분리과세 세액 (${(FINANCIAL_SEPARATE_RATE * 100).toFixed(1)}%)`,   Fmt.won(separateTax)],
     ];
 
     if (isComprehensive) {
-      rows.push(['2천만원 초과 (종합과세분)', Fmt.won(excess)]);
+      rows.push([`${thresholdText} 초과 (종합과세분)`, Fmt.won(excess)]);
       rows.push([`종합과세 세액 (${TaxEngine.bracketLabel(excess)})`, Fmt.won(comprehensiveTax)]);
     }
 
