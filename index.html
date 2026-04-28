@@ -122,7 +122,7 @@
             margin: 0 auto;
             padding: 0 24px 16px;
             display: grid;
-            grid-template-columns: 1.5fr 1fr;
+            grid-template-columns: 1fr;
             gap: 12px;
         }
         .panel {
@@ -196,6 +196,28 @@
             font-weight: 800;
             margin-bottom: 4px;
         }
+        #store-promo-panel .panel-body {
+            padding: 12px 12px 11px;
+        }
+        #store-promo-panel .panel-kicker {
+            margin-bottom: 8px;
+        }
+        #store-promo-panel .store-grid {
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 8px;
+        }
+        #store-promo-panel .store-link {
+            border-radius: 10px;
+            padding: 9px 10px;
+        }
+        #store-promo-panel .store-label {
+            margin-bottom: 6px;
+        }
+        #store-promo-panel .store-name {
+            font-size: .84rem;
+            margin-bottom: 0;
+            line-height: 1.35;
+        }
         .store-desc {
             font-size: .76rem;
             color: var(--text-secondary);
@@ -211,6 +233,45 @@
             font-size: .74rem;
             color: var(--text-muted);
             line-height: 1.5;
+        }
+        .support-section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px 24px;
+        }
+        .support-form {
+            display: grid;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .support-label {
+            font-size: .78rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+        .support-input,
+        .support-textarea,
+        .support-file {
+            width: 100%;
+            font-family: inherit;
+            font-size: .86rem;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface2);
+            color: var(--text-primary);
+        }
+        .support-input,
+        .support-file {
+            padding: 10px 12px;
+        }
+        .support-textarea {
+            min-height: 120px;
+            resize: vertical;
+            padding: 11px 12px;
+            line-height: 1.5;
+        }
+        .support-submit {
+            justify-self: start;
         }
         .support-placeholder {
             display: inline-flex;
@@ -533,7 +594,7 @@
                 padding-left: 16px;
                 padding-right: 16px;
             }
-            .filter-bar, .main { padding-left: 16px; padding-right: 16px; }
+            .filter-bar, .main, .support-section { padding-left: 16px; padding-right: 16px; }
             .card-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
         }
     </style>
@@ -561,7 +622,6 @@
 
 <section class="top-panels">
     <div class="panel" id="store-promo-panel"></div>
-    <div class="panel" id="support-panel"></div>
 </section>
 
 <!-- FILTER -->
@@ -585,6 +645,11 @@
 
 <!-- MAIN -->
 <main class="main" id="main-container"></main>
+
+<!-- SUPPORT -->
+<section class="support-section">
+    <div class="panel" id="support-panel"></div>
+</section>
 
 <!-- FOOTER -->
 <footer>© 2025 계산기 모음 | 모든 계산은 참고용이며 공식 확인을 권장합니다</footer>
@@ -679,8 +744,6 @@ function renderTopPanels() {
     storePanel.innerHTML = `
         <div class="panel-body">
             <div class="panel-kicker">스토어 홍보</div>
-            <div class="panel-title">운영 중인 스마트스토어를 함께 소개하세요</div>
-            <div class="panel-desc">복수 스마트스토어도 카드형 링크로 동시에 노출할 수 있습니다. 아래 설정값의 URL만 채우면 바로 활성화됩니다.</div>
             <div class="store-grid">
                 ${smartStores.map(store => {
                     if (!store.url) {
@@ -688,7 +751,6 @@ function renderTopPanels() {
                             <div class="store-link disabled">
                                 <div class="store-label">${store.label}</div>
                                 <div class="store-name">${store.name}</div>
-                                <div class="store-desc">${store.desc}</div>
                             </div>`;
                     }
 
@@ -696,30 +758,71 @@ function renderTopPanels() {
                         <a class="store-link" href="${store.url}" target="_blank" rel="noopener noreferrer">
                             <div class="store-label">${store.label}</div>
                             <div class="store-name">${store.name}</div>
-                            <div class="store-desc">${store.desc}</div>
                         </a>`;
                 }).join('')}
             </div>
         </div>`;
 
     const contactLink = supportConfig.contactUrl || (supportConfig.contactEmail ? `mailto:${supportConfig.contactEmail}` : "");
-    const reportLink = supportConfig.reportUrl || (supportConfig.contactEmail ? `mailto:${supportConfig.contactEmail}?subject=${encodeURIComponent('오류 제보')}` : "");
-
     supportPanel.innerHTML = `
         <div class="panel-body">
             <div class="panel-kicker">문의 접수</div>
-            <div class="panel-title">문의하기 / 오류 제보를 받을 수 있게 준비</div>
-            <div class="panel-desc">구글폼, Tally, 네이버 폼 또는 이메일 링크를 연결하면 사용자가 계산기 화면 안에서 바로 문의하고 오류를 제보할 수 있습니다.</div>
-            <div class="support-actions">
-                ${contactLink
-                    ? `<a class="btn btn-primary" href="${contactLink}" ${contactLink.startsWith('mailto:') ? '' : 'target="_blank" rel="noopener noreferrer"'}>문의하기</a>`
-                    : `<span class="support-placeholder">문의 링크 설정 필요</span>`}
-                ${reportLink
-                    ? `<a class="btn btn-ghost" href="${reportLink}" ${reportLink.startsWith('mailto:') ? '' : 'target="_blank" rel="noopener noreferrer"'}>오류 제보</a>`
-                    : `<span class="support-placeholder">오류 제보 링크 설정 필요</span>`}
-            </div>
-            <div class="support-note">상단의 smartStores, supportConfig.contactUrl, supportConfig.reportUrl, supportConfig.contactEmail 값만 채우면 실제 운영용으로 바로 전환됩니다.</div>
+            <div class="panel-title">문의 내용 작성 + 캡처 파일 첨부</div>
+            <div class="panel-desc">아래에서 문의 내용을 입력하고 캡처 파일을 첨부할 수 있습니다. 제출하면 설정된 문의 채널(폼 링크 또는 이메일)로 바로 이동합니다.</div>
+            <form class="support-form" id="support-form">
+                <div>
+                    <label class="support-label" for="support-subject">문의 제목</label>
+                    <input class="support-input" id="support-subject" type="text" placeholder="예) 계산 결과가 다르게 보여요" required>
+                </div>
+                <div>
+                    <label class="support-label" for="support-message">문의 내용</label>
+                    <textarea class="support-textarea" id="support-message" placeholder="문제 화면, 입력값, 발생 시점 등을 자세히 적어주세요." required></textarea>
+                </div>
+                <div>
+                    <label class="support-label" for="support-files">첨부 파일 (캡처, 로그 등)</label>
+                    <input class="support-file" id="support-files" type="file" accept="image/*,.pdf,.txt,.log" multiple>
+                </div>
+                <button class="btn btn-primary support-submit" type="submit">문의 접수 보내기</button>
+            </form>
+            <div class="support-note">첨부 파일은 대상 폼/메일 화면에서 최종 전송됩니다.</div>
         </div>`;
+
+    initSupportForm(contactLink);
+}
+
+function initSupportForm(contactLink) {
+    const form = document.getElementById('support-form');
+    if (!form) return;
+
+    form.addEventListener('submit', e => {
+        e.preventDefault();
+
+        const subject = document.getElementById('support-subject').value.trim();
+        const message = document.getElementById('support-message').value.trim();
+        const fileInput = document.getElementById('support-files');
+        const attachedFiles = Array.from(fileInput.files || []).map(file => `- ${file.name}`);
+
+        if (!subject || !message) return;
+
+        if (contactLink) {
+            if (contactLink.startsWith('mailto:')) {
+                const bodyLines = [
+                    message,
+                    "",
+                    "[첨부 예정 파일]",
+                    attachedFiles.length ? attachedFiles.join("\n") : "- 없음"
+                ];
+                window.location.href = `${contactLink}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyLines.join("\n"))}`;
+                return;
+            }
+
+            window.open(contactLink, '_blank', 'noopener,noreferrer');
+            alert('문의 폼이 새 탭에서 열렸습니다. 방금 입력한 내용과 첨부 파일을 해당 폼에 붙여 넣어 접수해 주세요.');
+            return;
+        }
+
+        alert('현재 문의 접수 채널을 준비 중입니다.');
+    });
 }
 
 function renderCard(calc, sectionClass) {
