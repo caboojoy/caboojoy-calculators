@@ -28,7 +28,22 @@
       </div>
       <div class="field">
         <label>날짜 *</label>
-        <input type="date" id="inputDate">
+        <div class="date-input-wrap">
+          <input type="date" id="inputDate" oninput="onDateInput()">
+          <div class="cal-toggle" id="calToggle">
+            <button class="cal-btn active" id="btnSolar" onclick="setCalType('solar')">양력</button>
+            <button class="cal-btn" id="btnLunar" onclick="setCalType('lunar')">음력</button>
+          </div>
+        </div>
+        <div id="lunarPreview" class="lunar-preview" style="display:none"></div>
+        <div id="lunarOptions" class="lunar-options" style="display:none">
+          <label class="lunar-opt-label">
+            <input type="checkbox" id="chkLeap" onchange="onDateInput()"> 윤달
+          </label>
+          <label class="lunar-opt-label">
+            <input type="checkbox" id="chkRepeat"> 매년 반복 (생일 등)
+          </label>
+        </div>
       </div>
       <button class="add-btn" onclick="addDday()">추가</button>
     </div>
@@ -116,6 +131,7 @@
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
