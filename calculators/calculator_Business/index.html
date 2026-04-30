@@ -1,0 +1,459 @@
+    <!DOCTYPE html>
+    <html lang="ko">
+    <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>비즈니스 계산기 | Caboojoy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+    <div class="app-container">
+
+    <header class="app-header">
+        <h1 class="app-title">비즈니스 계산기</h1>
+        <p class="app-subtitle">사업 실무에 필요한 핵심 계산 도구 모음 · 2025년 기준</p>
+    </header>
+
+    <nav class="tab-nav">
+        <div class="tab-nav-inner">
+        <button class="tab-btn active" data-tab="vat">부가세</button>
+        <button class="tab-btn" data-tab="margin">마진·마크업</button>
+        <button class="tab-btn" data-tab="bep">손익분기점</button>
+        <button class="tab-btn" data-tab="penalty">가산세</button>
+        <button class="tab-btn" data-tab="dep">감가상각</button>
+        <button class="tab-btn" data-tab="ratio">재무비율</button>
+        </div>
+    </nav>
+
+    <main class="main-content">
+
+        <!-- ══════════════ 부가세 ══════════════ -->
+        <section id="tab-vat" class="tab-panel active">
+        <div class="card">
+            <div class="card-header">
+            <h2>부가가치세 계산기</h2>
+            <p>공급가액과 공급대가를 양방향으로 계산합니다</p>
+            </div>
+            <div class="mode-toggle" id="vatToggle">
+            <button class="mode-btn active" data-mode="fwd">공급가액 → 공급대가</button>
+            <button class="mode-btn" data-mode="rev">공급대가 → 공급가액 역산</button>
+            </div>
+            <div class="input-group">
+            <label class="input-label" id="vatLbl">공급가액 (원)</label>
+            <input type="text" inputmode="numeric" id="vatInput" class="input-field" placeholder="예: 1,000,000" />
+            </div>
+            <div class="result-grid cols-3">
+            <div class="result-card">
+                <div class="result-label">공급가액</div>
+                <div class="result-value" id="vatSupply">—</div>
+            </div>
+            <div class="result-card accent">
+                <div class="result-label">부가세 (10%)</div>
+                <div class="result-value" id="vatTax">—</div>
+            </div>
+            <div class="result-card primary">
+                <div class="result-label">공급대가 (합계)</div>
+                <div class="result-value" id="vatTotal">—</div>
+            </div>
+            </div>
+            <div class="info-box">
+            <p>※ 부가가치세율 10% 적용 | 세금계산서 발행 기준</p>
+            <p>※ 면세·영세율(수출) 거래 해당 없음</p>
+            </div>
+        </div>
+        </section>
+
+        <!-- ══════════════ 마진·마크업 ══════════════ -->
+        <section id="tab-margin" class="tab-panel">
+        <div class="card">
+            <div class="card-header">
+            <h2>마진율·마크업 계산기</h2>
+            <p>원가·판매가 기준 수익성을 양방향으로 분석합니다</p>
+            </div>
+            <div class="mode-toggle" id="marginToggle">
+            <button class="mode-btn active" data-mode="rate">원가 + 마진율 → 판매가</button>
+            <button class="mode-btn" data-mode="price">원가 + 판매가 → 마진율 역산</button>
+            </div>
+            <div class="two-col">
+            <div class="input-group">
+                <label class="input-label">원가 (원)</label>
+                <input type="text" inputmode="numeric" id="mCostInput" class="input-field" placeholder="예: 10,000" />
+            </div>
+            <div class="input-group">
+                <label class="input-label" id="mSecondLbl">목표 마진율 (%)</label>
+                <input type="text" inputmode="decimal" id="mSecondInput" class="input-field" placeholder="예: 40" />
+            </div>
+            </div>
+            <div class="result-grid cols-3">
+            <div class="result-card">
+                <div class="result-label">원가</div>
+                <div class="result-value" id="mCost">—</div>
+            </div>
+            <div class="result-card">
+                <div class="result-label">이익 (마진액)</div>
+                <div class="result-value" id="mProfit">—</div>
+            </div>
+            <div class="result-card primary">
+                <div class="result-label">판매가</div>
+                <div class="result-value" id="mPrice">—</div>
+            </div>
+            <div class="result-card accent">
+                <div class="result-label">마진율 (매출 기준)</div>
+                <div class="result-value" id="mMarginRate">—</div>
+            </div>
+            <div class="result-card accent">
+                <div class="result-label">마크업률 (원가 기준)</div>
+                <div class="result-value" id="mMarkup">—</div>
+            </div>
+            <div class="result-card">
+                <div class="result-label">원가율</div>
+                <div class="result-value" id="mCostRate">—</div>
+            </div>
+            </div>
+            <div class="info-box">
+            <p>※ 마진율 = (판매가 − 원가) ÷ 판매가 × 100</p>
+            <p>※ 마크업률 = (판매가 − 원가) ÷ 원가 × 100</p>
+            <p>※ 마진율 40% ≒ 마크업률 66.7% | 마진율 50% = 마크업률 100%</p>
+            </div>
+        </div>
+        </section>
+
+        <!-- ══════════════ 손익분기점 ══════════════ -->
+        <section id="tab-bep" class="tab-panel">
+        <div class="card">
+            <div class="card-header">
+            <h2>손익분기점 분석기 (BEP)</h2>
+            <p>고정비·변동비 구조로 BEP와 목표이익 달성 조건을 계산합니다</p>
+            </div>
+            <div class="two-col">
+            <div class="input-group">
+                <label class="input-label">월 고정비 (원)</label>
+                <input type="text" inputmode="numeric" id="bepFixed" class="input-field" placeholder="예: 5,000,000" />
+            </div>
+            <div class="input-group">
+                <label class="input-label">제품·서비스 단가 (원)</label>
+                <input type="text" inputmode="numeric" id="bepPrice" class="input-field" placeholder="예: 30,000" />
+            </div>
+            <div class="input-group">
+                <label class="input-label">단위당 변동비 (원)</label>
+                <input type="text" inputmode="numeric" id="bepVar" class="input-field" placeholder="예: 18,000" />
+            </div>
+            <div class="input-group">
+                <label class="input-label">목표 영업이익 (원, 선택)</label>
+                <input type="text" inputmode="numeric" id="bepTarget" class="input-field" placeholder="예: 2,000,000" value="0" />
+            </div>
+            </div>
+            <div class="result-grid cols-4">
+            <div class="result-card">
+                <div class="result-label">단위 공헌마진</div>
+                <div class="result-value" id="bepCM">—</div>
+            </div>
+            <div class="result-card">
+                <div class="result-label">공헌마진율</div>
+                <div class="result-value" id="bepCMR">—</div>
+            </div>
+            <div class="result-card primary">
+                <div class="result-label">BEP 판매량</div>
+                <div class="result-value" id="bepQty">—</div>
+            </div>
+            <div class="result-card primary">
+                <div class="result-label">BEP 매출액</div>
+                <div class="result-value" id="bepRev">—</div>
+            </div>
+            <div class="result-card accent">
+                <div class="result-label">목표달성 판매량</div>
+                <div class="result-value" id="bepTQty">—</div>
+            </div>
+            <div class="result-card accent">
+                <div class="result-label">목표달성 매출액</div>
+                <div class="result-value" id="bepTRev">—</div>
+            </div>
+            <div class="result-card">
+                <div class="result-label">안전한계율</div>
+                <div class="result-value" id="bepMOS">—</div>
+            </div>
+            <div class="result-card">
+                <div class="result-label">영업레버리지 (DOL)</div>
+                <div class="result-value" id="bepDOL">—</div>
+            </div>
+            </div>
+            <div class="info-box">
+            <p>※ 공헌마진 = 판매가 − 변동비 | BEP = 고정비 ÷ 공헌마진율</p>
+            <p>※ 안전한계율 = (목표매출 − BEP매출) ÷ 목표매출 × 100</p>
+            <p>※ DOL(영업레버리지) = 공헌마진 합계 ÷ 영업이익 (BEP 근접 시 급등)</p>
+            </div>
+        </div>
+        </section>
+
+        <!-- ══════════════ 가산세 ══════════════ -->
+        <section id="tab-penalty" class="tab-panel">
+        <div class="card">
+            <div class="card-header">
+            <h2>가산세 계산기</h2>
+            <p>국세기본법 기준 · 2024년 적용 요율</p>
+            </div>
+            <div class="two-col">
+            <div class="input-group">
+                <label class="input-label">세금 종류</label>
+                <select id="penTaxType" class="input-field">
+                <option value="vat">부가가치세</option>
+                <option value="income">종합소득세</option>
+                <option value="corp">법인세</option>
+                <option value="withhold">원천세</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label class="input-label">신고 유형</label>
+                <select id="penType" class="input-field">
+                <option value="none">무신고 — 일반 (20%)</option>
+                <option value="none_unfair">무신고 — 부당 (40%)</option>
+                <option value="under">과소신고 — 일반 (10%)</option>
+                <option value="under_unfair">과소신고 — 부당 (40%)</option>
+                <option value="late_only">신고완료 · 납부지연만</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label class="input-label">납부세액 / 미납세액 (원)</label>
+                <input type="text" inputmode="numeric" id="penAmt" class="input-field" placeholder="예: 1,000,000" />
+            </div>
+            <div class="input-group">
+                <label class="input-label">납부기한 (법정)</label>
+                <input type="date" id="penDue" class="input-field" />
+            </div>
+            <div class="input-group">
+                <label class="input-label">실제 납부일 (미납 시 오늘)</label>
+                <input type="date" id="penPay" class="input-field" />
+            </div>
+            <div class="input-group">
+                <label class="input-label">납세자 구분</label>
+                <select id="penTaxpayer" class="input-field">
+                <option value="general">일반 납세자</option>
+                <option value="sme">중소기업 (무신고 감면 없음, 참고용)</option>
+                </select>
+            </div>
+            </div>
+            <div class="result-grid cols-3">
+            <div class="result-card">
+                <div class="result-label">무·과소신고 가산세</div>
+                <div class="result-value" id="penReport">—</div>
+            </div>
+            <div class="result-card danger">
+                <div class="result-label">납부지연 가산세</div>
+                <div class="result-value" id="penLate">—</div>
+            </div>
+            <div class="result-card">
+                <div class="result-label">납부지연 일수</div>
+                <div class="result-value" id="penDays">—</div>
+            </div>
+            <div class="result-card danger">
+                <div class="result-label">가산세 합계</div>
+                <div class="result-value" id="penSum">—</div>
+            </div>
+            <div class="result-card primary">
+                <div class="result-label">원금 + 가산세 총납부액</div>
+                <div class="result-value" id="penGrand">—</div>
+            </div>
+            <div class="result-card">
+                <div class="result-label">가산세율 (세액 대비)</div>
+                <div class="result-value" id="penRate">—</div>
+            </div>
+            </div>
+            <div class="info-box">
+            <p>※ 일반 무신고: ×20% | 부당 무신고: ×40%</p>
+            <p>※ 일반 과소신고: ×10% | 부당 과소신고: ×40%</p>
+            <p>※ 납부지연가산세: 미납세액 × 경과일수 × 0.022%/일 (국세기본법 §47의4, 2022.2.15 이후)</p>
+            <p>※ 자진신고 감면: 법정기한 내 수정신고 시 과소신고 가산세 최대 90% 감면</p>
+            </div>
+        </div>
+        </section>
+
+        <!-- ══════════════ 감가상각 ══════════════ -->
+        <section id="tab-dep" class="tab-panel">
+        <div class="card">
+            <div class="card-header">
+            <h2>감가상각 계산기</h2>
+            <p>정액법·정률법 연도별 상각 스케줄을 계산합니다</p>
+            </div>
+            <div class="mode-toggle" id="depToggle">
+            <button class="mode-btn active" data-mode="sl">정액법 (Straight-Line)</button>
+            <button class="mode-btn" data-mode="db">정률법 (Declining Balance)</button>
+            </div>
+            <div class="three-col">
+            <div class="input-group">
+                <label class="input-label">취득원가 (원)</label>
+                <input type="text" inputmode="numeric" id="depCost" class="input-field" placeholder="예: 10,000,000" />
+            </div>
+            <div class="input-group">
+                <label class="input-label">잔존가치 (원)</label>
+                <input type="text" inputmode="numeric" id="depSalvage" class="input-field" placeholder="예: 0" value="0" />
+            </div>
+            <div class="input-group">
+                <label class="input-label">내용연수 (년)</label>
+                <input type="text" inputmode="numeric" id="depLife" class="input-field" placeholder="예: 5" value="5" min="1" max="50" />
+            </div>
+            </div>
+            <div class="result-grid cols-4">
+            <div class="result-card">
+                <div class="result-label">연간 상각액</div>
+                <div class="result-value" id="depAnnual">—</div>
+            </div>
+            <div class="result-card">
+                <div class="result-label">월 상각액</div>
+                <div class="result-value" id="depMonthly">—</div>
+            </div>
+            <div class="result-card accent">
+                <div class="result-label">상각률</div>
+                <div class="result-value" id="depRate">—</div>
+            </div>
+            <div class="result-card">
+                <div class="result-label">총 상각 가능액</div>
+                <div class="result-value" id="depTotal">—</div>
+            </div>
+            </div>
+            <div class="table-section">
+            <h3 class="table-title">연도별 감가상각 스케줄</h3>
+            <div class="table-wrap">
+                <table class="data-table">
+                <thead>
+                    <tr>
+                    <th class="left">연도</th>
+                    <th>기초 장부가액</th>
+                    <th>감가상각비</th>
+                    <th>감가상각누계액</th>
+                    <th>기말 장부가액</th>
+                    </tr>
+                </thead>
+                <tbody id="depBody">
+                    <tr><td colspan="5" class="empty">취득원가를 입력하세요</td></tr>
+                </tbody>
+                </table>
+            </div>
+            </div>
+        </div>
+        </section>
+
+        <!-- ══════════════ 재무비율 ══════════════ -->
+        <section id="tab-ratio" class="tab-panel">
+        <div class="ratio-layout">
+
+            <!-- 입력 패널 -->
+            <aside class="ratio-input-panel">
+            <div class="card">
+                <div class="card-header">
+                <h2>재무 데이터 입력</h2>
+                <p>해당 항목만 입력해도 계산됩니다</p>
+                </div>
+
+                <div class="input-section">
+                <div class="section-title">손익계산서 (당기)</div>
+                <div class="input-group"><label class="input-label">매출액</label><input type="text" inputmode="decimal" id="rSales" class="input-field" placeholder="원" /></div>
+                <div class="input-group"><label class="input-label">매출원가</label><input type="text" inputmode="decimal" id="rCOGS" class="input-field" placeholder="원" /></div>
+                <div class="input-group"><label class="input-label">영업이익</label><input type="text" inputmode="decimal" id="rOI" class="input-field" placeholder="원" /></div>
+                <div class="input-group"><label class="input-label">당기순이익</label><input type="text" inputmode="decimal" id="rNI" class="input-field" placeholder="원" /></div>
+                <div class="input-group"><label class="input-label">EBITDA</label><input type="text" inputmode="decimal" id="rEBITDA" class="input-field" placeholder="원 (선택)" /></div>
+                <div class="input-group"><label class="input-label">이자비용</label><input type="text" inputmode="decimal" id="rInt" class="input-field" placeholder="원" /></div>
+                </div>
+
+                <div class="input-section">
+                <div class="section-title">재무상태표 (당기말)</div>
+                <div class="input-group"><label class="input-label">총자산</label><input type="text" inputmode="decimal" id="rTA" class="input-field" placeholder="원" /></div>
+                <div class="input-group"><label class="input-label">자기자본 (순자산)</label><input type="text" inputmode="decimal" id="rEQ" class="input-field" placeholder="원" /></div>
+                <div class="input-group"><label class="input-label">부채총계</label><input type="text" inputmode="decimal" id="rTD" class="input-field" placeholder="원" /></div>
+                <div class="input-group"><label class="input-label">유동자산</label><input type="text" inputmode="decimal" id="rCA" class="input-field" placeholder="원" /></div>
+                <div class="input-group"><label class="input-label">유동부채</label><input type="text" inputmode="decimal" id="rCL" class="input-field" placeholder="원" /></div>
+                <div class="input-group"><label class="input-label">재고자산</label><input type="text" inputmode="decimal" id="rInv" class="input-field" placeholder="원" /></div>
+                <div class="input-group"><label class="input-label">매출채권</label><input type="text" inputmode="decimal" id="rAR" class="input-field" placeholder="원" /></div>
+                <div class="input-group"><label class="input-label">매입채무</label><input type="text" inputmode="decimal" id="rAP" class="input-field" placeholder="원" /></div>
+                </div>
+
+                <div class="input-section">
+                <div class="section-title">전기 데이터 (성장성용)</div>
+                <div class="input-group"><label class="input-label">전기 매출액</label><input type="text" inputmode="decimal" id="rPSales" class="input-field" placeholder="원" /></div>
+                <div class="input-group"><label class="input-label">전기 영업이익</label><input type="text" inputmode="decimal" id="rPOI" class="input-field" placeholder="원" /></div>
+                <div class="input-group"><label class="input-label">전기 당기순이익</label><input type="text" inputmode="decimal" id="rPNI" class="input-field" placeholder="원" /></div>
+                <div class="input-group"><label class="input-label">전기 총자산</label><input type="text" inputmode="decimal" id="rPTA" class="input-field" placeholder="원" /></div>
+                </div>
+
+                <div class="input-section">
+                <div class="section-title">시장가치 (상장사 전용)</div>
+                <div class="input-group"><label class="input-label">주가 (원)</label><input type="text" inputmode="decimal" id="rPrice" class="input-field" placeholder="예: 85,000" /></div>
+                <div class="input-group"><label class="input-label">EPS — 주당순이익</label><input type="text" inputmode="decimal" id="rEPS" class="input-field" placeholder="원" /></div>
+                <div class="input-group"><label class="input-label">BPS — 주당순자산</label><input type="text" inputmode="decimal" id="rBPS" class="input-field" placeholder="원" /></div>
+                <div class="input-group"><label class="input-label">DPS — 주당배당금</label><input type="text" inputmode="decimal" id="rDPS" class="input-field" placeholder="원" /></div>
+                <div class="input-group"><label class="input-label">발행주식수 (주)</label><input type="text" inputmode="decimal" id="rShares" class="input-field" placeholder="예: 10,000,000" /></div>
+                </div>
+
+                <button class="calc-btn" id="ratioCalcBtn">재무비율 계산하기</button>
+            </div>
+            </aside>
+
+            <!-- 결과 패널 -->
+            <div class="ratio-results">
+
+            <div class="card ratio-card">
+                <div class="ratio-cat-title profitability">수익성 지표 (Profitability)</div>
+                <div class="ratio-grid">
+                <div class="ratio-row"><span class="ri-name">ROE 자기자본이익률</span><span class="ri-formula">순이익 ÷ 자기자본</span><span class="ri-val" id="rROE">—</span></div>
+                <div class="ratio-row"><span class="ri-name">ROA 총자산이익률</span><span class="ri-formula">순이익 ÷ 총자산</span><span class="ri-val" id="rROA">—</span></div>
+                <div class="ratio-row"><span class="ri-name">매출총이익률</span><span class="ri-formula">(매출 − 원가) ÷ 매출</span><span class="ri-val" id="rGPM">—</span></div>
+                <div class="ratio-row"><span class="ri-name">영업이익률</span><span class="ri-formula">영업이익 ÷ 매출</span><span class="ri-val" id="rOPM">—</span></div>
+                <div class="ratio-row"><span class="ri-name">순이익률</span><span class="ri-formula">순이익 ÷ 매출</span><span class="ri-val" id="rNPM">—</span></div>
+                <div class="ratio-row"><span class="ri-name">EBITDA 마진율</span><span class="ri-formula">EBITDA ÷ 매출</span><span class="ri-val" id="rEBITDAM">—</span></div>
+                </div>
+            </div>
+
+            <div class="card ratio-card">
+                <div class="ratio-cat-title stability">안정성 지표 (Stability)</div>
+                <div class="ratio-grid">
+                <div class="ratio-row"><span class="ri-name">유동비율</span><span class="ri-formula">유동자산 ÷ 유동부채</span><span class="ri-val" id="rCR">—</span></div>
+                <div class="ratio-row"><span class="ri-name">당좌비율</span><span class="ri-formula">(유동자산 − 재고) ÷ 유동부채</span><span class="ri-val" id="rQR">—</span></div>
+                <div class="ratio-row"><span class="ri-name">부채비율</span><span class="ri-formula">부채 ÷ 자기자본</span><span class="ri-val" id="rDR">—</span></div>
+                <div class="ratio-row"><span class="ri-name">자기자본비율</span><span class="ri-formula">자기자본 ÷ 총자산</span><span class="ri-val" id="rER">—</span></div>
+                <div class="ratio-row"><span class="ri-name">이자보상배율</span><span class="ri-formula">영업이익 ÷ 이자비용</span><span class="ri-val" id="rICR">—</span></div>
+                </div>
+            </div>
+
+            <div class="card ratio-card">
+                <div class="ratio-cat-title activity">활동성 지표 (Activity)</div>
+                <div class="ratio-grid">
+                <div class="ratio-row"><span class="ri-name">총자산회전율</span><span class="ri-formula">매출 ÷ 총자산</span><span class="ri-val" id="rATR">—</span></div>
+                <div class="ratio-row"><span class="ri-name">재고자산회전율</span><span class="ri-formula">매출원가 ÷ 재고</span><span class="ri-val" id="rITR">—</span></div>
+                <div class="ratio-row"><span class="ri-name">매출채권회전율</span><span class="ri-formula">매출 ÷ 매출채권</span><span class="ri-val" id="rRTR">—</span></div>
+                <div class="ratio-row"><span class="ri-name">매입채무회전율</span><span class="ri-formula">매출원가 ÷ 매입채무</span><span class="ri-val" id="rPTR">—</span></div>
+                </div>
+            </div>
+
+            <div class="card ratio-card">
+                <div class="ratio-cat-title growth">성장성 지표 (Growth)</div>
+                <div class="ratio-grid">
+                <div class="ratio-row"><span class="ri-name">매출액 증가율</span><span class="ri-formula">(당기 − 전기) ÷ 전기</span><span class="ri-val" id="rSGR">—</span></div>
+                <div class="ratio-row"><span class="ri-name">영업이익 증가율</span><span class="ri-formula">(당기 − 전기) ÷ 전기</span><span class="ri-val" id="rOGR">—</span></div>
+                <div class="ratio-row"><span class="ri-name">순이익 증가율</span><span class="ri-formula">(당기 − 전기) ÷ 전기</span><span class="ri-val" id="rNGR">—</span></div>
+                <div class="ratio-row"><span class="ri-name">총자산 증가율</span><span class="ri-formula">(당기 − 전기) ÷ 전기</span><span class="ri-val" id="rAGR">—</span></div>
+                </div>
+            </div>
+
+            <div class="card ratio-card">
+                <div class="ratio-cat-title market">시장가치 지표 (Market)</div>
+                <div class="ratio-grid">
+                <div class="ratio-row"><span class="ri-name">PER 주가수익비율</span><span class="ri-formula">주가 ÷ EPS</span><span class="ri-val" id="rPER">—</span></div>
+                <div class="ratio-row"><span class="ri-name">PBR 주가순자산비율</span><span class="ri-formula">주가 ÷ BPS</span><span class="ri-val" id="rPBR">—</span></div>
+                <div class="ratio-row"><span class="ri-name">EV/EBITDA</span><span class="ri-formula">(시총 + 부채) ÷ EBITDA</span><span class="ri-val" id="rEVE">—</span></div>
+                <div class="ratio-row"><span class="ri-name">배당수익률</span><span class="ri-formula">DPS ÷ 주가</span><span class="ri-val" id="rDY">—</span></div>
+                <div class="ratio-row"><span class="ri-name">배당성향</span><span class="ri-formula">DPS ÷ EPS</span><span class="ri-val" id="rDP">—</span></div>
+                </div>
+            </div>
+
+            </div><!-- /ratio-results -->
+        </div><!-- /ratio-layout -->
+        </section>
+
+    </main>
+    </div>
+    <script src="script.js"></script>
+    </body>
+    </html>
+

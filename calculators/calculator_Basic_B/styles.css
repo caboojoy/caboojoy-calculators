@@ -99,7 +99,7 @@ body {
 
 button {
     min-height: 44px;
-    padding: 10px 10px;
+    padding: 4px 10px;
     font-size: clamp(1.1rem, 3.5vw, 1.4rem);
     font-weight: 600;
     line-height: 1.1;
@@ -154,14 +154,24 @@ button[data-action="appendDecimal"]:hover {
     background-color: #f0f0f0;
 }
 
-/* 숫자와 사칙연산 기호 버튼을 진하게 */
+/* 숫자 버튼 텍스트 크기 */
 button[data-value],
 button[data-action="appendDoubleZero"],
-button[data-action="appendDecimal"],
-button[data-action="operate"] {
+button[data-action="appendDecimal"] {
     font-weight: bold;
     font-size: clamp(1.25rem, 4.2vw, 1.5rem);
     
+}
+
+/* 사칙연산(+,-,×,÷) 텍스트 크기 */
+button[data-action="operate"] {
+    font-weight: bold;
+    font-size: clamp(1.6rem, 4.8vw, 2.2rem);
+}
+
+/* 숫자/사칙연산/= 제외 기능 버튼 텍스트 크기 */
+button:not([data-value]):not([data-action="appendDoubleZero"]):not([data-action="appendDecimal"]):not([data-action="operate"]):not([data-action="calculate"]) {
+    font-size: clamp(1.15rem, 2.9vw, 1.12rem);
 }
 
 /* 숫자 외 기능 버튼 (= 버튼 제외) */
@@ -175,23 +185,12 @@ button:not([data-value]):not([data-action="appendDoubleZero"]):not([data-action=
 }
 
  
-/* = 버튼 색상 변경 */
-button[data-action="calculate"] {
-    background-color: #ffffff;
-    color: #000000;
-}
-
-/* = 버튼 hover 효과 */
-button[data-action="calculate"]:hover {
-    background-color: #f0f0f0;
-} 
-
-
-
-/* = 버튼 색상 변경 */
+/* = 버튼 색상 및 텍스트 크기 */
 button[data-action="calculate"] {
     background-color: #1a4a8a;
     color: #ffffff;
+    font-weight: bold;
+    font-size: clamp(1.4rem, 4.8vw, 1.7rem);
 }
 
 /* = 버튼 hover 효과 */
