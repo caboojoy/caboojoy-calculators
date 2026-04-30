@@ -6,23 +6,42 @@
     // CONFIG — 연도별 요율 및 한도
     // ==========================================
     const CONFIG = {
+        2026: {
+        pension: {
+            rate: 0.095,          // 국민연금 합산 요율 (27년 만에 인상)
+            workerRate: 0.0475,
+            employerRate: 0.0475,
+            ceiling: 6370000,     // 기준소득월액 상한 (637만원, 2025.7.1 ~)
+            floor: 400000,        // 기준소득월액 하한 (40만원)
+        },
+        health: {
+            rate: 0.0719,         // 건강보험 합산 요율
+            workerRate: 0.03595,
+            employerRate: 0.03595,
+            ltcRate: 0.1314,      // 장기요양보험 = 건강보험료 × 13.14%
+        },
+        employment: {
+            workerRate: 0.009,    // 고용보험 근로자
+            employerRate: 0.0115, // 사업주 (150인 미만 기준)
+        },
+        },
         2025: {
         pension: {
-            rate: 0.09,           // 국민연금 합산 요율
+            rate: 0.09,
             workerRate: 0.045,
             employerRate: 0.045,
             ceiling: 6170000,     // 기준소득월액 상한 (617만원)
             floor: 370000,        // 기준소득월액 하한 (37만원)
         },
         health: {
-            rate: 0.0709,         // 건강보험 합산 요율
+            rate: 0.0709,
             workerRate: 0.03545,
             employerRate: 0.03545,
             ltcRate: 0.1295,      // 장기요양보험 = 건강보험료 × 12.95%
         },
         employment: {
-            workerRate: 0.009,    // 고용보험 근로자
-            employerRate: 0.0115, // 사업주 (150인 미만 기준)
+            workerRate: 0.009,
+            employerRate: 0.0115,
         },
         },
         2024: {
@@ -57,7 +76,7 @@
         nontax: 0,
         bonusIncluded: false,
         industryRate: 0.009,
-        year: 2025,
+        year: 2026,
         result: null,
     };
     
@@ -68,14 +87,32 @@
     // 탭 전환
     // ==========================================
     function switchTab(tab) {
+        const prevTab = state.tab;
         state.tab = tab;
+    
+        // ── 탭 전환 시 입력값 자동 변환 (연봉↔월급) ──
+        const inputEl = document.getElementById('salary-input');
+        const currentNum = parseRaw(inputEl.value);
+        if (currentNum > 0) {
+        let converted;
+        if (prevTab === 'annual'  && tab === 'monthly') converted = Math.round(currentNum / 12);
+        if (prevTab === 'monthly' && tab === 'annual')  converted = currentNum * 12;
+        if (converted !== undefined) {
+            inputEl.value = converted.toLocaleString('ko-KR');
+            const annual = tab === 'annual' ? converted : converted * 12;
+            const slider = document.getElementById('salary-slider');
+            slider.value = Math.min(Math.max(annual, 10000000), 200000000);
+            document.getElementById('slider-display').textContent = formatWon(annual) + '원';
+        }
+        }
+    
         document.getElementById('tab-annual').classList.toggle('active', tab === 'annual');
         document.getElementById('tab-monthly').classList.toggle('active', tab === 'monthly');
         document.getElementById('salary-label').textContent =
         tab === 'annual' ? '연봉 입력' : '월급 입력';
         document.getElementById('salary-hint').textContent =
         tab === 'annual' ? '월 환산액이 자동으로 계산됩니다' : '연봉 환산액이 자동으로 계산됩니다';
-        if (document.getElementById('salary-input').value) calculate();
+        if (inputEl.value) calculate();
     }
     
     // ==========================================
@@ -142,6 +179,10 @@
         const nontaxErr = document.getElementById('nontax-error');
         if (nontax > monthly) {
         nontaxErr.classList.add('show');
+        // 잘못된 이전 결과가 보이지 않도록 결과 카드 숨김
+        ['chart-card', 'table-card', 'compare-card', 'ratio-card'].forEach(id => {
+            document.getElementById(id).style.display = 'none';
+        });
         return;
         }
         nontaxErr.classList.remove('show');
@@ -151,23 +192,23 @@
     
         // ── 국민연금 ──
         const pensionBase     = Math.min(Math.max(taxableSalary, cfg.pension.floor), cfg.pension.ceiling);
-        const pensionWorker   = Math.floor(pensionBase * cfg.pension.workerRate);
-        const pensionEmployer = Math.floor(pensionBase * cfg.pension.employerRate);
+        const pensionWorker   = insFloor(pensionBase, cfg.pension.workerRate);
+        const pensionEmployer = insFloor(pensionBase, cfg.pension.employerRate);
     
         // ── 건강보험 ──
-        const healthWorker   = Math.floor(taxableSalary * cfg.health.workerRate);
-        const healthEmployer = Math.floor(taxableSalary * cfg.health.employerRate);
+        const healthWorker   = insFloor(taxableSalary, cfg.health.workerRate);
+        const healthEmployer = insFloor(taxableSalary, cfg.health.employerRate);
     
         // ── 장기요양보험 ──
-        const ltcWorker   = Math.floor(healthWorker   * cfg.health.ltcRate);
-        const ltcEmployer = Math.floor(healthEmployer * cfg.health.ltcRate);
+        const ltcWorker   = insFloor(healthWorker,   cfg.health.ltcRate);
+        const ltcEmployer = insFloor(healthEmployer, cfg.health.ltcRate);
     
         // ── 고용보험 ──
-        const emplWorker   = Math.floor(taxableSalary * cfg.employment.workerRate);
-        const emplEmployer = Math.floor(taxableSalary * cfg.employment.employerRate);
+        const emplWorker   = insFloor(taxableSalary, cfg.employment.workerRate);
+        const emplEmployer = insFloor(taxableSalary, cfg.employment.employerRate);
     
         // ── 산재보험 (사업주만) ──
-        const injuryEmployer = Math.floor(taxableSalary * (industryRate / 100));
+        const injuryEmployer = insFloor(taxableSalary, industryRate / 100);
     
         // ── 합계 ──
         const totalWorker   = pensionWorker + healthWorker + ltcWorker + emplWorker;
@@ -457,7 +498,7 @@
                 grid:  { color: 'rgba(184,216,239,0.5)' },
                 ticks: {
                     color: '#7aaec8',
-                    font:  { family: 'DM Mono', size: 11 },
+                    font:  { family: 'IBM Plex Mono', size: 11 },
                     callback: v => formatWonShort(v),
                 },
                 },
@@ -487,10 +528,10 @@
         const nontax   = parseRaw(document.getElementById('nontax-input').value);
         const taxable2 = Math.max(monthly2 - nontax, 0);
     
-        const p2 = Math.floor(Math.min(Math.max(taxable2, cfg.pension.floor), cfg.pension.ceiling) * cfg.pension.workerRate);
-        const h2 = Math.floor(taxable2 * cfg.health.workerRate);
-        const l2 = Math.floor(h2 * cfg.health.ltcRate);
-        const e2 = Math.floor(taxable2 * cfg.employment.workerRate);
+        const p2 = insFloor(Math.min(Math.max(taxable2, cfg.pension.floor), cfg.pension.ceiling), cfg.pension.workerRate);
+        const h2 = insFloor(taxable2, cfg.health.workerRate);
+        const l2 = insFloor(h2, cfg.health.ltcRate);
+        const e2 = insFloor(taxable2, cfg.employment.workerRate);
     
         const total2 = p2 + h2 + l2 + e2;
         const net2   = monthly2 - total2;
@@ -562,21 +603,44 @@
         ['chart-card', 'table-card', 'compare-card', 'ratio-card'].forEach(id => {
         document.getElementById(id).style.display = 'none';
         });
+        // detail 열림 상태 초기화
+        const btn = document.getElementById('detail-btn');
+        const content = document.getElementById('detail-content');
+        btn.classList.remove('open');
+        content.classList.remove('show');
+        btn.childNodes.forEach(n => {
+        if (n.nodeType === Node.TEXT_NODE && n.textContent.trim()) {
+            n.textContent = ' 계산 과정 보기';
+        }
+        });
     }
     
     // ==========================================
     // 유틸리티
     // ==========================================
     
-    /** 쉼표 제거 후 숫자 반환 */
+    /** 보험료 원 단위 절사 (부동소수점 오차 보정) */
+    function insFloor(base, rate) {
+        // base * rate 결과를 소수점 2자리로 정규화 후 절사
+        // 예: 3,000,000 × 0.009 → JS 부동소수점상 26,999.9999... → '27000.00' → 27,000
+        return Math.floor(+(base * rate).toFixed(2));
+    }
     function parseRaw(str) {
         return parseFloat((str || '').replace(/,/g, '')) || 0;
     }
     
-    /** 입력 중 천단위 쉼표 자동 포맷 */
+    /** 입력 중 천단위 쉼표 자동 포맷 (커서 위치 보존) */
     function applyThousands(el) {
         const raw       = el.value.replace(/[^0-9]/g, '');
-        el.value = raw ? parseInt(raw, 10).toLocaleString('ko-KR') : '';
+        const formatted = raw ? parseInt(raw, 10).toLocaleString('ko-KR') : '';
+    
+        // 포맷 전후 길이 차이만큼 커서 위치 보정
+        const prevLen   = el.value.length;
+        const cursorPos = el.selectionStart ?? prevLen;
+        el.value = formatted;
+        const delta     = formatted.length - prevLen;
+        const newCursor = Math.max(0, cursorPos + delta);
+        el.setSelectionRange(newCursor, newCursor);
     }
     
     /** 공통 포맷 핸들러 — 포맷 후 콜백 실행 */
@@ -608,9 +672,9 @@
         document.getElementById('salary-input').value = '40,000,000';
         document.getElementById('salary-slider').value = '40000000';
         document.getElementById('slider-display').textContent = '4,000만원';
+        document.getElementById('year-badge').textContent = '2026년';
         calculate();
     }
     
     window.addEventListener('DOMContentLoaded', init);
-    
     

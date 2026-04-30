@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>4대보험 계산기</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="style.css">
     </head>
@@ -16,7 +16,7 @@
     <header>
         <div class="header-badge">
         <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><circle cx="5" cy="5" r="5"/></svg>
-        2025년 기준
+        2026년 기준
         </div>
         <h1>4대보험 계산기</h1>
         <p class="header-sub">국민연금 · 건강보험 · 고용보험 · 산재보험 — 근로자/사업주 부담 자동 계산</p>
@@ -42,7 +42,7 @@
             <label id="salary-label">연봉 입력</label>
             <div class="input-wrap">
                 <span class="input-prefix">₩</span>
-                <input type="text" id="salary-input" placeholder="0" inputmode="numeric"
+                <input type="text" id="salary-input" placeholder="40,000,000" inputmode="numeric"
                 oninput="onSalaryInput(this)">
                 <span class="input-suffix">원</span>
             </div>
@@ -70,7 +70,7 @@
             <label>비과세 금액 (월)</label>
             <div class="input-wrap">
                 <span class="input-prefix">₩</span>
-                <input type="text" id="nontax-input" placeholder="0" inputmode="numeric"
+                <input type="text" id="nontax-input" placeholder="200,000" inputmode="numeric"
                 oninput="onFormattedInput(this, calculate)">
                 <span class="input-suffix">원</span>
             </div>
@@ -102,10 +102,11 @@
             <!-- 적용 연도 -->
             <div class="year-select-wrap">
             <label style="margin:0;font-size:12px">적용 연도</label>
-            <span class="year-badge" id="year-badge">2025년</span>
+            <span class="year-badge" id="year-badge">2026년</span>
             <select id="year-select"
                 style="width:auto;padding:4px 28px 4px 8px;font-size:12px;"
                 onchange="onYearChange(this.value)">
+                <option value="2026" selected>2026</option>
                 <option value="2025">2025</option>
                 <option value="2024">2024</option>
             </select>
@@ -184,7 +185,7 @@
             <label>비교 연봉 입력</label>
             <div class="input-wrap">
                 <span class="input-prefix">₩</span>
-                <input type="text" id="compare-input" placeholder="0" inputmode="numeric"
+                <input type="text" id="compare-input" placeholder="50,000,000" inputmode="numeric"
                 oninput="onFormattedInput(this, updateCompare)">
                 <span class="input-suffix">원</span>
             </div>
@@ -203,3 +204,4 @@
     <script src="script.js"></script>
     </body>
     </html>
+    
