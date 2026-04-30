@@ -660,4 +660,5 @@
     ::-webkit-scrollbar       { width: 6px; }
     ::-webkit-scrollbar-track { background: var(--bg2); }
     ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
     
