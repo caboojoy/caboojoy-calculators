@@ -1,10 +1,10 @@
 body {
     display: flex;
     justify-content: center;
-    align-items: flex-start;
-    min-height: 100vh;
+    align-items: center;
+    height: 100vh;
     margin: 0;
-    padding: 12px 8px;
+    padding: 36px 8px 12px;
     background-color: #f0f0f0;
     font-family: Arial, sans-serif;
 }
