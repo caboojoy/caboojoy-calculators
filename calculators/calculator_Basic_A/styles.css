@@ -2,9 +2,9 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
     margin: 0;
-    padding: 36px 8px 12px;
+    padding: 20px 8px;
     background-color: #f0f0f0;
     font-family: Arial, sans-serif;
 }
@@ -15,7 +15,6 @@ body {
     padding: 20px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     width: min(450px, 100%);
-    min-height: 650px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -96,14 +95,14 @@ body {
 .buttons {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 8px;
+    gap: 6px; /* 간격 축소 */
     width: 100%;
-    grid-auto-rows: minmax(50px, auto); /* 행 높이 자동 조정 */
+    grid-auto-rows: minmax(45px, auto); /* 최소 높이 축소 */
 }
 
 /* 전체 버튼 공통 스타일 */
 button {
-    padding: 10px 6px;
+    padding: 8px 4px; /* 패딩 축소 */
     font-size: 1rem;
     border: none;
     background-color: #4a4a4a;
@@ -122,76 +121,14 @@ button:hover {
     font-size: 1rem;
 }
 
-/* 모바일 환경 최적화 */
-@media (max-width: 480px) {
-    .calculator {
-        width: 100%;
-        height: auto;
-        min-height: auto;
-        padding: 14px 12px;
-    }
-
-    .buttons {
-        gap: 6px; /* 버튼 간격 축소 */
-    }
-
-    button {
-        font-size: 1.1rem;
-        padding: 14px 8px; /* 패딩 조정 */
-        min-height: 50px; /* 최소 높이 보장 */
-    }
-
-        /* 숫자와 사칙연산 기호 버튼을 진하게 */
-    button[data-value],
-    button[data-action="appendDoubleZero"],
-    button[data-action="appendDecimal"],
-    button[data-action="operate"] {
-        font-weight: bold;
-        font-size: 2rem;
-    }
-
-    /* 작은 텍스트 버튼 */
-    .small-text {
-        font-size: 0.85rem;
-        padding: 10px 4px;
-    }
-
-    /* 디스플레이 크기 조정 */
-    #main-display {
-        font-size: 2rem;
-        height: 50px;
-    }
-
-    #sub-display {
-        font-size: 1rem;
-        height: 25px;
-    }
-}
-
-/* 매우 작은 화면 (320px 이하) */
-@media (max-width: 360px) {
-    button {
-        font-size: 1rem;
-        padding: 12px 6px;
-        min-height: 45px;
-    }
-
-    button[data-value],
-    button[data-action="operate"] {
-        font-size: 1.3rem;
-    }
-
-    .small-text {
-        font-size: 0.75rem;
-    }
-}
-
-/* 숫자 버튼 (data-value가 있는 버튼들) */
+/* 숫자 버튼 */
 button[data-value],
 button[data-action="appendDoubleZero"],
 button[data-action="appendDecimal"] {
     background-color: #ffffff;
     color: #000;
+    font-weight: bold;
+    font-size: 1.7rem; /* 크기 축소 */
 }
 
 /* 숫자 버튼 hover */
@@ -201,24 +138,62 @@ button[data-action="appendDecimal"]:hover {
     background-color: #f0f0f0;
 }
 
-/* 연산 기호만 별도로 더 크고 굵게 설정 */
+/* 사칙연산 기호 버튼 - 화이트 색상 */
 button[data-action="operate"] {
-    font-size: 2.5rem; /* 연산 기호만 더 크게 */
-    font-weight: 900; /* 연산 기호만 더 굵게 */
-    line-height: 1; /* 버튼 내 정렬 조정 */
+    background-color: #ffffff;
+    color: #000;
+    font-size: 2.4rem; /* 크기 축소 */
+    font-weight: 900;
+    line-height: 1;
+}
+
+button[data-action="operate"]:hover {
+    background-color: #f0f0f0; /* 밝은 회색 호버 */
+    transform: scale(0.96);
+}
+
+/* = 버튼 - 화이트 색상 */
+button[data-action="calculate"] {
+    background-color: #ffffff;
+    color: #000;
+    font-size: 2.4rem; /* 크기 축소 */
+    font-weight: 900;
+    line-height: 1;
+}
+
+button[data-action="calculate"]:hover {
+    background-color: #f0f0f0; /* 밝은 회색 호버 */
+    transform: scale(0.96);
+}
+
+/* 기능 버튼들 크기 조정 */
+button[data-action="clearAll"],
+button[data-action="clearEntry"],
+button[data-action="toggleSign"],
+button[data-action="percentage"],
+button[data-action="memoryAdd"],
+button[data-action="memorySub"],
+button[data-action="memoryRecall"],
+button[data-action="memoryClear"],
+button[data-action="toggleBracket"],
+button[data-action="grandTotal"],
+button[data-action="taxPlus"],
+button[data-action="taxMinus"],
+button[data-action="toggleAreaConversion"] {
+    font-size: 1.05rem; /* 크기 축소 */
 }
 
 /* 숫자 외 기능 버튼 */
 button:not([data-value]):not([data-action="appendDoubleZero"]):not(
         [data-action="appendDecimal"]
-    ) {
+    ):not([data-action="operate"]):not([data-action="calculate"]) {
     background-color: #5a5a5a;
 }
 
 /* 숫자 외 기능 버튼 hover */
 button:not([data-value]):not([data-action="appendDoubleZero"]):not(
         [data-action="appendDecimal"]
-    ):hover {
+    ):not([data-action="operate"]):not([data-action="calculate"]):hover {
     background-color: #6c6c6c;
 }
 
@@ -235,4 +210,103 @@ button:active {
 /* 괄호 불균형 표시 */
 .bracket-warning {
     border: 1px solid #ff9900;
+}
+
+/* 모바일 환경 최적화 */
+@media (max-width: 480px) {
+    body {
+        padding: 12px 8px;
+    }
+
+    .calculator {
+        width: 100%;
+        padding: 14px 10px; /* 패딩 축소 */
+    }
+
+    .display {
+        margin-top: 8px;
+    }
+
+    .buttons {
+        gap: 5px; /* 간격 축소 */
+    }
+
+    button {
+        font-size: 0.95rem;
+        padding: 10px 5px; /* 패딩 축소 */
+        min-height: 44px; /* 최소 높이 축소 */
+    }
+
+
+     /* 숫자 버튼 */
+    button[data-value],
+    button[data-action="appendDoubleZero"],
+    button[data-action="appendDecimal"] {
+        font-size: 1.5rem; /* 크기 축소 */
+    }
+
+    /* 사칙연산 기호 */
+    button[data-action="operate"] {
+        font-size: 2rem; /* 크기 축소 */
+    }
+
+    /* = 버튼 */
+    button[data-action="calculate"] {
+        font-size: 2rem; /* 크기 축소 */
+    }
+
+    /* 기능 버튼들 */
+    button[data-action="clearAll"],
+    button[data-action="clearEntry"],
+    button[data-action="toggleSign"],
+    button[data-action="percentage"],
+    button[data-action="memoryAdd"],
+    button[data-action="memorySub"],
+    button[data-action="memoryRecall"],
+    button[data-action="memoryClear"],
+    button[data-action="toggleBracket"],
+    button[data-action="grandTotal"],
+    button[data-action="taxPlus"],
+    button[data-action="taxMinus"] {
+        font-size: 0.95rem; /* 크기 축소 */
+    }
+
+    .small-text {
+        font-size: 0.8rem;
+        padding: 8px 3px;
+    }
+
+    #main-display {
+        font-size: 2rem;
+        height: 50px;
+    }
+
+    #sub-display {
+        font-size: 1rem;
+        height: 25px;
+    }
+}
+
+/* 더 작은 화면 */
+@media (max-width: 360px) {
+    button {
+        font-size: 0.9rem;
+        padding: 9px 3px;
+        min-height: 42px;
+    }
+
+    button[data-value],
+    button[data-action="appendDoubleZero"],
+    button[data-action="appendDecimal"] {
+        font-size: 1.4rem;
+    }
+
+    button[data-action="operate"],
+    button[data-action="calculate"] {
+        font-size: 1.8rem;
+    }
+
+    .small-text {
+        font-size: 0.7rem;
+    }
 }
