@@ -93,13 +93,13 @@ body {
 .buttons {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
+    gap: 6px;
     width: 100%;
 }
 
 button {
     min-height: 44px;
-    padding: 4px 10px;
+    padding: 10px 10px;
     font-size: clamp(1.1rem, 3.5vw, 1.4rem);
     font-weight: 600;
     line-height: 1.1;
@@ -117,7 +117,7 @@ button:hover {
 }
 
 .small-text {
-    font-size: clamp(0.82rem, 2.5vw, 1rem);
+    font-size: clamp(0.7rem, 2.2vw, 0.9rem);
     letter-spacing: -0.01em;
     white-space: nowrap;
 }
@@ -154,24 +154,14 @@ button[data-action="appendDecimal"]:hover {
     background-color: #f0f0f0;
 }
 
-/* 숫자 버튼 텍스트 크기 */
+/* 숫자와 사칙연산 기호 버튼을 진하게 */
 button[data-value],
 button[data-action="appendDoubleZero"],
-button[data-action="appendDecimal"] {
-    font-weight: bold;
-    font-size: clamp(1.25rem, 4.2vw, 1.5rem);
-    
-}
-
-/* 사칙연산(+,-,×,÷) 텍스트 크기 */
+button[data-action="appendDecimal"],
 button[data-action="operate"] {
     font-weight: 900;
-    font-size: clamp(1.6rem, 4.8vw, 2.2rem);
-}
-
-/* 숫자/사칙연산/= 제외 기능 버튼 텍스트 크기 */
-button:not([data-value]):not([data-action="appendDoubleZero"]):not([data-action="appendDecimal"]):not([data-action="operate"]):not([data-action="calculate"]) {
-    font-size: clamp(1.15rem, 2.9vw, 1.12rem);
+    font-size: clamp(1.5rem, 4.2vw, 1.7rem);
+    
 }
 
 /* 숫자 외 기능 버튼 (= 버튼 제외) */
@@ -184,19 +174,55 @@ button:not([data-value]):not([data-action="appendDoubleZero"]):not([data-action=
     background-color: #6c6c6c;
 }
 
- 
-/* = 버튼 색상 및 텍스트 크기 */
+/* 기능 버튼 텍스트 크기 별도 설정 */
+button[data-action="taxPlus"],
+button[data-action="taxMinus"],
+button[data-action="toggleSign"],
+button[data-action="percentage"],
+button[data-action="memoryAdd"],
+button[data-action="memorySub"],
+button[data-action="memoryRecall"],
+button[data-action="memoryClear"],
+button[data-action="clearAll"],
+button[data-action="clearEntry"] {
+    font-size: clamp(1.0rem, 3.2vw, 1.3rem); /* 원하는 크기로 조절 */
+    font-weight: 600;
+}
+
+/* = 버튼 스타일 (크기 별도 설정) */
 button[data-action="calculate"] {
-    background-color: #ffffff;;
+    background-color: #ffffff;
     color: #000000;
-    font-weight: 900;
-    font-size: clamp(1.4rem, 4.8vw, 1.7rem);
+    font-size: clamp(1.5rem, 4.5vw, 1.8rem); /* = 기호 크기 별도 설정 */
+    font-weight: bold;
 }
 
 /* = 버튼 hover 효과 */
 button[data-action="calculate"]:hover {
     background-color: #f0f0f0;
-} 
+}
+
+/* Tax 버튼 */
+button[data-action="taxPlus"],
+button[data-action="taxMinus"] {
+    font-size: clamp(1.0rem, 3.2vw, 1.3rem);
+}
+
+/* 메모리 버튼 */
+button[data-action="memoryAdd"],
+button[data-action="memorySub"],
+button[data-action="memoryRecall"],
+button[data-action="memoryClear"] {
+    font-size: clamp(1.0rem, 3.2vw, 1.3rem);
+}
+
+/* 기타 기능 버튼 */
+button[data-action="toggleSign"],
+button[data-action="percentage"],
+button[data-action="clearAll"],
+button[data-action="clearEntry"] {
+    font-size: clamp(1.0rem, 3.2vw, 1.3rem);
+}
 
 
 
@@ -215,5 +241,3 @@ button:active {
     font-size: 1rem;
     background-color: white;
 }
-
-

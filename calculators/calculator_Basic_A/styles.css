@@ -94,8 +94,8 @@ body {
 
 .buttons {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 6px; /* 간격 축소 */
+    grid-template-columns: repeat(4, 1fr );
+    gap: 7px; /* 간격 축소 */
     width: 100%;
     grid-auto-rows: minmax(45px, auto); /* 최소 높이 축소 */
 }
