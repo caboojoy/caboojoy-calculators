@@ -1451,6 +1451,51 @@ document.addEventListener("DOMContentLoaded", () => {
         },
 
         /**
+         * 제곱근 계산
+         */
+        squareRoot() {
+            try {
+                if (this.mainDisplay.value === "Error") return;
+
+                let currentValue = this.mainDisplay.value.replace(/,/g, "").trim();
+
+                // 수식이 포함되어 있으면 먼저 계산
+                if (this.isExpression(currentValue)) {
+                    this.calculate();
+                    if (this.mainDisplay.value === "Error") return;
+                    currentValue = this.mainDisplay.value.replace(/,/g, "").trim();
+                }
+
+                const value = parseFloat(currentValue);
+                if (isNaN(value)) {
+                    this.showError("유효하지 않은 값");
+                    return;
+                }
+
+                if (value < 0) {
+                    this.showError("음수의 루트는 계산할 수 없습니다");
+                    return;
+                }
+
+                const result = Math.sqrt(value);
+                const roundedResult = this.applyRounding(result);
+
+                this.updateDisplay(roundedResult.toString(), true);
+                this.subDisplay.innerText = `√(${this.formatNumber(
+                    value,
+                    false
+                )})`;
+                this.lastCalculatedValue = roundedResult;
+                this.isNewInput = true;
+                this.calculationComplete = true;
+                this.currentExpression = roundedResult.toString();
+            } catch (error) {
+                console.error("루트 계산 오류:", error);
+                this.showError("루트 계산 오류");
+            }
+        },
+
+        /**
          * 키보드 입력 처리
          * @param {KeyboardEvent} event - 키보드 이벤트
          */
