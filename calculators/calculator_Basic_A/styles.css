@@ -274,7 +274,7 @@ button:active {
     button {
         padding: 10px 6px;
         min-height: 56px;
-        height: 56px;
+        /* height: 56px; */
     }
 
     /* 숫자 버튼 텍스트 크기 */
@@ -313,6 +313,8 @@ button:active {
     .small-text {
         font-size: 0.75rem;
     }
+
+    
 }
 
 /* 더 작은 화면 */
@@ -329,7 +331,7 @@ button:active {
     button {
         padding: 8px 4px;
         min-height: 52px;
-        height: 52px;
+      /* height: 52px; */
     }
 
     .buttons {
