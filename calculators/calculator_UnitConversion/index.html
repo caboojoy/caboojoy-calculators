@@ -1,0 +1,81 @@
+    <!DOCTYPE html>
+    <html lang="ko">
+    <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>단위 변환 계산기</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    </head>
+    <body>
+    <div class="page-wrapper">
+        <!-- 헤더 -->
+        <header class="site-header">
+        <div class="header-inner">
+            <div class="header-icon">⇄</div>
+            <div>
+            <h1 class="site-title">단위 변환 계산기</h1>
+            <p class="site-subtitle">Unit Converter</p>
+            </div>
+        </div>
+        </header>
+
+        <main class="main-content">
+        <!-- 카테고리 탭 -->
+        <nav class="category-nav" id="categoryNav">
+            <!-- JS로 생성 -->
+        </nav>
+
+        <!-- 입력 패널 -->
+        <section class="input-panel card">
+            <div class="input-row">
+            <div class="input-group">
+                <label class="input-label">변환할 값</label>
+                <input
+                type="number"
+                id="inputValue"
+                class="value-input"
+                placeholder="숫자를 입력하세요"
+                step="any"
+                autocomplete="off"
+                />
+            </div>
+            <div class="unit-select-group">
+                <label class="input-label">기준 단위</label>
+                <select id="fromUnit" class="unit-select"></select>
+            </div>
+            <button class="swap-btn" id="swapBtn" title="단위 교환">⇄</button>
+            </div>
+        </section>
+
+        <!-- 결과 헤더 -->
+        <div class="results-header" id="resultsHeader" style="display:none;">
+            <span id="resultsTitle" class="results-title"></span>
+            <span class="results-hint">카드를 클릭하면 해당 단위로 역변환</span>
+        </div>
+
+        <!-- 결과 그리드 -->
+        <div class="results-grid" id="resultsGrid"></div>
+
+        <!-- 빈 상태 -->
+        <div class="empty-state" id="emptyState">
+            <div class="empty-icon">🔢</div>
+            <p>값을 입력하면<br/>모든 단위로 변환됩니다</p>
+        </div>
+        </main>
+
+        <footer class="site-footer">
+        <p>* 한국 전통 단위: 1근=600g, 1돈=3.75g, 1관=3750g, 1평=3.30579m², 1자=30.303cm, 1리=392.7m</p>
+        <p>* 시간: 월=30일, 년=365일 기준 / 데이터: 1KB=1024B 기준 / 연비: L/100km는 역수 관계로 자동 처리</p>
+        <p>* 압력: 1atm=101,325Pa / 에너지: 1kcal=4,184J / 각도: 라디안=180/π°</p>
+        </footer>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="script.js"></script>
+    </body>
+    </html>
+
+    

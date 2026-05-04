@@ -1,0 +1,138 @@
+    /* ═══════════════════════════════════════════════════════════
+    IFRS 금융상품 계산기 — Design Tokens & Theme
+    파스텔 스카이블루 테마 (caboojoy-calculators 통일 디자인)
+    ═══════════════════════════════════════════════════════════ */
+
+    /* ── CSS 변수 정의 (컴포넌트 내 var() 참조용) ── */
+    :root {
+        /* Background */
+        --color-background-primary:   #ffffff;
+        --color-background-secondary: #f4f8fc;
+        --color-background-info:      #e3f2fd;
+        --color-background-success:   #e8f5e9;
+        --color-background-warning:   #fff8e1;
+        --color-background-danger:    #ffebee;
+    
+        /* Border */
+        --color-border-primary:       #bbd5ef;
+        --color-border-secondary:     #dde8f5;
+        --color-border-tertiary:      #edf3fb;
+        --color-border-info:          #90caf9;
+    
+        /* Text */
+        --color-text-primary:         #1a2a3a;
+        --color-text-secondary:       #5a7390;
+        --color-text-tertiary:        #90a8bf;
+        --color-text-info:            #1565c0;
+        --color-text-success:         #2e7d32;
+        --color-text-warning:         #e65100;
+        --color-text-danger:          #c62828;
+    
+        /* Border radius */
+        --border-radius-lg:           12px;
+        --border-radius-md:           8px;
+        --border-radius-sm:           4px;
+    
+        /* Typography */
+        --font-sans:  'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        --font-mono:  'JetBrains Mono', 'Courier New', monospace;
+    }
+    
+    /* ── 글로벌 리셋 ── */
+    *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+    
+    html, body {
+        min-height: 100%;
+    }
+    
+    body {
+        font-family: var(--font-sans);
+        font-size: 14px;
+        color: var(--color-text-primary);
+        background: linear-gradient(160deg, #c9e8ff 0%, #e8f4ff 40%, #f0faff 100%);
+        background-attachment: fixed;
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+    }
+    
+    #root {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 20px 0 60px;
+    }
+    
+    /* ── 폼 요소 공통 스타일 ── */
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    select {
+        height: 34px;
+        padding: 0 10px;
+        border: 1px solid var(--color-border-primary);
+        border-radius: var(--border-radius-sm);
+        background: var(--color-background-primary);
+        color: var(--color-text-primary);
+        font-family: var(--font-sans);
+        font-size: 13px;
+        outline: none;
+        transition: border-color 0.15s;
+    }
+    
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    input[type="date"]:focus,
+    select:focus {
+        border-color: #5ba3d9;
+        box-shadow: 0 0 0 2px rgba(91, 163, 217, 0.15);
+    }
+    
+    input[type="checkbox"] {
+        accent-color: #185FA5;
+        width: 14px;
+        height: 14px;
+        cursor: pointer;
+    }
+    
+    select {
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235a7390' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        padding-right: 28px;
+    }
+    
+    /* ── 스크롤바 커스텀 ── */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: var(--color-background-secondary);
+        border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #a8c8e8;
+        border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #7aaccf;
+    }
+    
+    /* ── 테이블 내 숫자 폰트 ── */
+    td, th {
+        font-family: inherit;
+    }
+    
+    /* ── 반응형 ── */
+    @media (max-width: 600px) {
+        #root {
+        padding: 10px 0 40px;
+        }
+    }
+
+    
