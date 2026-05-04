@@ -379,7 +379,7 @@ document.addEventListener("DOMContentLoaded", () => {
             else if (
                 value === "(" ||
                 value === ")" ||
-                currentValue.length < 15
+                currentValue.length < 20
             ) {
                 currentValue += value;
             }

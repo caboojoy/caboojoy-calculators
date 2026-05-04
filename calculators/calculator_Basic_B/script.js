@@ -182,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentValue = value;
             } 
             // 괄호 입력이 제한되지 않도록 수정
-            else if (value === '(' || value === ')' || currentValue.length < 15) {
+            else if (value === '(' || value === ')' || currentValue.length < 20) {
                 currentValue += value;
             }
         
